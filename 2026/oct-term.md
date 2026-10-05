@@ -435,7 +435,7 @@ The punchline: consistent hashing is not a load balancer. It is a **placement** 
 
 ---
 
-day - 3
+day - 5
 
 ## Vector Clocks
 
