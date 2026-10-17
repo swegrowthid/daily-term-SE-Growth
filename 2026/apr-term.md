@@ -14,6 +14,7 @@ The Fundamental Concept — Regions
 The single most important thing to understand about G1GC:
 
 
+```text
 Traditional GC Heap Layout:
 ┌──────────────────┬──────────────┬──────────────────────────┐
 │   Young Gen      │  Survivor    │      Old Generation       │
@@ -32,6 +33,7 @@ G1GC Heap Layout:
 ├────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┤
 │ O  │ O  │ E  │ H  │ O  │ E  │ O  │ O  │ E  │ O  │ O  │ E  │
 └────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴────┘
+```
 
 E = Eden region    (new objects)
 S = Survivor region (surviving young objects)
@@ -230,6 +232,7 @@ Every system has a capacity limit — and what happens beyond that limit defines
 
 What happens when traffic exceeds capacity:
 
+```text
   WITHOUT Load Shedding:
     Traffic doubles beyond capacity
          │
@@ -270,12 +273,13 @@ What happens when traffic exceeds capacity:
     50% get fast "try again" response
 
   Partial service > total collapse — always
+```
 
 ### Example:
 Streaming Platform During Live Event
 A streaming platform hosts a massive live concert — expecting 10x normal traffic. Here is how Load Shedding Architecture keeps the platform alive.
 
-```
+```text
                      Internet
                         │
                  50M concurrent users
@@ -575,6 +579,7 @@ A Graph G = (V, E) consists of:
   V = Vertices (nodes) — the entities
   E = Edges — the relationships between entities
 
+```text
   Visual:
        [A]──────[B]
         │  \      │
@@ -598,6 +603,7 @@ A Graph G = (V, E) consists of:
     Directed:   A→B means A follows B (not necessarily vice versa)
     Weighted:   edges have numerical weights
     Heterogeneous: multiple types of nodes and edges
+```
 
 ### Example:
 
@@ -915,7 +921,7 @@ CoAP = Sending a postcard (just the essential message, minimal overhead, perfect
 Smart Home Temperature Sensors
 Scenario: 50 Temperature Sensors in a Building
 
-```
+```text
 ┌────────────────────────────────────────────────────┐
 │  Building IoT Network                              │
 └────────────────────────────────────────────────────┘
@@ -1001,7 +1007,7 @@ The Core Problem — Distributed Consensus:
 Distributed Database with Quorum Writes
 A financial services company runs a distributed database across 5 nodes for their account balance system. Here is how quorum algorithms protect every transaction.
 
-```
+```text
 Comparing quorum configurations for N=5 nodes:
 
   All satisfy R + W > N = 5
@@ -1316,6 +1322,7 @@ At enterprise scale, content governance processes hundreds of millions of items.
 
 The Standard (Broken) Content Review Workflow:
 
+```text
   Machine classifier analyzes content
           │
           ▼
@@ -1331,6 +1338,7 @@ The Standard (Broken) Content Review Workflow:
           │
           ▼
   Human decision: APPROVE or REMOVE
+```
 
   Problems created in the ??????? phase:
     ❌ Inconsistency — different reviewers decide differently
@@ -1686,6 +1694,7 @@ Background — Why Frontier Agents Exist
 
 The Problem With Standard Agents — The Awareness Gap:
 
+```text
   Standard Agent (Level 2) workflow:
     Receive goal
         │
@@ -1697,6 +1706,7 @@ The Problem With Standard Agents — The Awareness Gap:
         │
         ▼
     Return result (or get stuck)
+```
 
   What standard agents CANNOT do:
     ❌ Notice their tools have changed mid-execution

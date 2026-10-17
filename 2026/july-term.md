@@ -8,38 +8,40 @@ Loop Engineering is the discipline of designing, optimizing, and debugging the i
 
 The core loop that every agent system runs looks like this:
 
-                    ┌─────────────────────────────┐
-                    │     1. PERCEIVE              │
-                    │   (read tools, environment)  │
-                    └─────────────┬───────────────┘
-                                  ▼
-                    ┌─────────────────────────────┐
-                    │     2. REASON                │
-                    │   (plan next action,         │
-                    │    evaluate context)         │
-                    └─────────────┬───────────────┘
-                                  ▼
-                    ┌─────────────────────────────┐
-                    │     3. ACT                   │
-                    │   (call a tool: terminal,    │
-                    │    read_file, web_search)    │
-                    └─────────────┬───────────────┘
-                                  ▼
-                    ┌─────────────────────────────┐
-                    │     4. OBSERVE               │
-                    │   (tool returns output)      │
-                    └─────────────┬───────────────┘
-                                  │
-                          ┌───────┴───────┐
-                          │               │
-                      Goal met?      Not yet?
-                          │               │
-                          ▼               │
-                    ┌──────────┐          │
-                    │   DONE   │          │
-                    └──────────┘          │
-                          ▲               │
-                          └───────────────┘
+```text
+┌─────────────────────────────┐
+│     1. PERCEIVE              │
+│   (read tools, environment)  │
+└─────────────┬───────────────┘
+              ▼
+┌─────────────────────────────┐
+│     2. REASON                │
+│   (plan next action,         │
+│    evaluate context)         │
+└─────────────┬───────────────┘
+              ▼
+┌─────────────────────────────┐
+│     3. ACT                   │
+│   (call a tool: terminal,    │
+│    read_file, web_search)    │
+└─────────────┬───────────────┘
+              ▼
+┌─────────────────────────────┐
+│     4. OBSERVE               │
+│   (tool returns output)      │
+└─────────────┬───────────────┘
+              │
+      ┌───────┴───────┐
+      │               │
+  Goal met?      Not yet?
+      │               │
+      ▼               │
+┌──────────┐          │
+│   DONE   │          │
+└──────────┘          │
+      ▲               │
+      └───────────────┘
+```
 
 Why the loop matters:
 
@@ -48,7 +50,7 @@ A non-agentic LLM call is one-shot: prompt → response. If the response is wron
 Key loop engineering patterns:
 
 | Pattern | What It Does | Example |
-|---------|-------------|---------| (2/11)
+|---------|-------------|---------|
 | ReAct Loop | Reason → Act → Observe — interleave thinking with tool use | "I need to find the file. Let me search for it. I found it. Now let me read it. I see the bug. Now let me fix it." |
 | Reflection Loop | Generate output → Critique output → Refine | Write code → Check for bugs → Fix bugs → Recheck |
 | Retry Loop | Try → Fail → Backoff → Retry | Call API → Timeout → Wait 1s → Retry (exponential backoff) |
@@ -312,6 +314,7 @@ This isn't about becoming a data scientist or training ML models. It's about bei
 - "How do we know when AI output is wrong in subtle, non-obvious ways?"
 - "Why did my teammate get terrible output from the same prompt that works for me?"
 
+```text
 The role split visualized:
 The Senior Developer (2026)
 ┌──────────────────────────────┐
@@ -337,6 +340,7 @@ premium for both halves                  │
 ────────────────────────                 │
           ┌────────────────────┘
           ▼
+```
 "Senior Developer" title now
 implicitly means both roles
 
@@ -357,7 +361,7 @@ Scenario: Your 12-person microservices team just started using AI coding assista
 
 ✅ ENGINEER + AI SYSTEMS ARCHITECT Approach: 
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ PHASE 1: AUDIT & MAP (Week 1)                               │
 │ ┌─────────────────────────────────────────────────────────┐ │
@@ -435,6 +439,7 @@ BASE stands for Basically Available, Soft state, Eventually consistent. It is th
 
 The core trade-off is simple:
 
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                                                              │
 │   ACID                         vs.          BASE             │
@@ -447,6 +452,7 @@ The core trade-off is simple:
 │   Single-node friendly                    Distributed by design  │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
@@ -454,7 +460,7 @@ A visual flow comparison of how ACID vs. BASE handle the same scenario — an e-
 
 Scenario: A popular sneaker drops at 9:00 AM. 10,000 people try to buy the last 100 pairs. The inventory system is spread across 3 data centers (US-East, EU-West, Asia-Pacific).
 
-```
+```text
 ✅ BASE Approach (Available first, consistent later):
 
 Time │  US-East          │  EU-West           │  Asia-Pacific
@@ -542,7 +548,7 @@ The attack is significant because:
 
 A step-by-step visual flow of how the Codecov supply chain attack unfolded — from initial compromise to mass data exfiltration.
 
-```
+```text
 ═══════════════════════════════════════════════════════════════
   Phases of the Codecov Attack
 ═══════════════════════════════════════════════════════════════
@@ -789,6 +795,7 @@ day - 7
 Artificial Superintelligence (ASI) is a hypothetical future AI that surpasses the best human minds in every domain — not just in narrow tasks like chess or coding, but in general intelligence: scientific creativity, strategic planning, social wisdom, emotional understanding, and the ability to recursively improve itself. ASI is not just smarter than humans at some things; it is smarter than humans at everything that intelligence enables, by a margin that may be as wide as human intelligence exceeds that of a goldfish.
 
 ASI is the third and final stage in the mainstream AI progression framework:
+```text
 THE AI PROGRESSION LADDER
 ═══════════════════════════
 
@@ -847,12 +854,13 @@ THE AI PROGRESSION LADDER
                               │  🧾 Code generation      │
                               │                          │
                               └──────────────────────────┘
+```
 
 ### Example:
 
 A visual thought experiment comparing how Human Intelligence, AGI, and ASI approach the same problem — curing a complex disease like Alzheimer's.
 
-```
+```text
 ═══════════════════════════════════════════════════════════════
   SCENARIO: "Find a cure for Alzheimer's disease."
 ═══════════════════════════════════════════════════════════════
@@ -1099,6 +1107,7 @@ Fully Homomorphic Encryption (FHE) is a revolutionary encryption technique that 
 
 Think about what that enables: a cloud server can run analytics on your medical records, calculate your taxes, or process your financial transactions — without ever seeing your raw data. The server works on ciphertext, produces an encrypted result, and only the person with the decryption key can see the actual output.
 
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                                                              │
 │              TRADITIONAL ENCRYPTION                          │
@@ -1124,6 +1133,7 @@ Think about what that enables: a cloud server can run analytics on your medical 
 │                    Server NEVER sees raw data                │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
+```
 
 The "Fully" in FHE means it supports both addition AND multiplication on encrypted data — which means it can theoretically compute ANY function (since any computation can be built from these two operations). Earlier versions of homomorphic encryption were "partially" or "somewhat" homomorphic (could only do addition OR multiplication, or only a limited number of operations). FHE removes those limits.
 
@@ -1131,7 +1141,7 @@ The "Fully" in FHE means it supports both addition AND multiplication on encrypt
 
 APPLICATION 1: Privacy-Preserving Medical Diagnosis 🏥
 
-```
+```text
 Scenario: A hospital wants to use a cloud AI service to analyze
            patient medical records for early cancer detection.
 
@@ -1210,7 +1220,7 @@ A Columnar Table is a way of storing data on disk where values are grouped by co
 
 This seemingly small change has massive implications for analytics performance:
 
-```
+```text
 ═══════════════════════════════════════════════════════════════
   ROW-ORIENTED vs. COLUMN-ORIENTED STORAGE
 ═══════════════════════════════════════════════════════════════
@@ -1277,153 +1287,155 @@ This seemingly small change has massive implications for analytics performance:
                (Must read all 4 columns from different parts
                 of the disk and reassemble them — slower than
                 row-oriented for this pattern)
-                ```
-                
-                **The key insight:** Most analytics queries read a FEW columns across MANY rows ("average spend," "count of users," "total revenue by month"). Row-oriented storage forces you to read ALL columns even when you only need one. Columnar storage lets you read ONLY the columns you need.
-                
-                Analogy — The Library vs. The Encyclopedia 📚
-                
-                **Row-oriented storage is like a set of encyclopedias.** Volume 1 covers Aardvark to Antarctica. Volume 2 covers Antarctica to Brazil. Each volume contains everything about that page range — history, geography, economy, culture — mixed together. If you want to know the "population" of every country, you have to flip through ALL volumes and extract just the population number from each page. You read thousands of pages about history, geography, and culture that you don't need.
-                
-                **Columnar storage is like having a single "Population of Every Country" reference sheet** stored separately from a "Capital City of Every Country" sheet, stored separately from an "Official Language" sheet. If you want to know the population of every country, you grab ONE sheet. The other 20 sheets stay on the shelf. You read exactly what you need and nothing more.
-                
-                In the analytics world, this difference means: a query that takes **2 minutes** on a row-oriented database takes **2 seconds** on a columnar database — and uses 60x less memory.
-                
-                ---
-                
-                ### Example:
-                
-                A visual comparison of how the same analytics query runs on row vs. columnar storage.
-                
-                ---
-                
-                **SCENARIO:** A retail company with 1 billion sales records needs to calculate:
-                *"What was the total revenue per region in Q2 2026?"*
-                
-                The table has 20 columns — but the query only needs **3**: `region`, `amount`, `date`.
-                ═══════════════════════════════════════════════════════════════
-                  ROW-ORIENTED DATABASE (PostgreSQL)
-                ═══════════════════════════════════════════════════════════════
-                
-                  QUERY: SELECT region, SUM(amount) FROM sales
-                         WHERE date BETWEEN '2026-04-01' AND '2026-06-30'
-                         GROUP BY region;
-                         
-                           WHAT THE DATABASE READS FROM DISK:
-                         
-                           ┌─────────────────────────────────────────────────────────┐
-                           │                                                         │
-                           │  [1 | product_id | 20 cols | region | amount | date |   │
-                           │        customer_id | payment_method | ... | ...]         │
-                           │                                                         │
-                           │  Each row is read COMPLETELY — all 20 columns — even    │
-                           │  though only 3 columns are needed.                      │
-                           │                                                         │
-                           │                            ▼                             │
-                           │                                                         │
-                           │  📦 Data read from disk:  20 columns × 1B rows          │
-                           │     = 20 BILLION column values scanned                  │
-                           │                                                         │
-                           │  📦 Data actually needed: 3 columns × ~100M rows (Q2)   │
-                           │     = 300 MILLION column values                          │
-                           │                                                         │
-                           │  ❌ Waste: 98.5% of read data is thrown away             │
-                           │  ❌ Disk I/O: 150 GB read, when only 2 GB is needed     │
-                           │  ❌ Time: ~45 seconds (most spent reading & discarding) │
-                           │                                                         │
-                           └─────────────────────────────────────────────────────────┘
-                         
-                         
-                           ═══════════════════════════════════════════════════════════
-                           COLUMNAR DATABASE (Snowflake / ClickHouse)
-                           ═══════════════════════════════════════════════════════════
-                         
-                           WHAT THE DATABASE READS FROM DISK:
-                         
-                           ┌─────────────────────────────────────────────────────────┐
-                           │                                                         │
-                           │    17 OTHER COLUMNS                    3 NEEDED COLUMNS │
-                           │    (NEVER TOUCHED!)                    (READ & USED)    │
-                           │                                     ┌──────────────────┐│
-                           │  product_id     ─── NOT READ ──►   │                  ││
-                           │  customer_id    ─── NOT READ ──►   │  region column   ││
-                             │  payment_method ─── NOT READ ──►   │  ─────────────── ││
-                             │  discount       ─── NOT READ ──►   │  us-east         ││
-                             │  shipping_cost  ─── NOT READ ──►   │  us-west         ││
-                             │  tax            ─── NOT READ ──►   │  eu-west         ││
-                             │  ...            ─── NOT READ ──►   │  ap-southeast    ││
-                             │  ...            ─── NOT READ ──►   │  ... (1B values) ││
-                             │  ...            ─── NOT READ ──►   │                  ││
-                             │  ...            ─── NOT READ ──►   │  amount column   ││
-                             │                                     │  ─────────────── ││
-                             │                                     │  1250            ││
-                             │                                     │  3400            ││
-                             │                                     │  890             ││
-                             │                                     │  ...             ││
-                             │                                     │                  ││
-                             │                                     │  date column     ││
-                             │                                     │  ─────────────── ││
-                             │                                     │  2026-04-01      ││
-                             │                                     │  2026-04-01      ││
-                             │                                     │  ...             ││
-                             │                                     └──────────────────┘│
-                             │                                                         │
-                             │  📦 Data read from disk:  3 columns × 1B rows           │
-                             │     = 3 BILLION column values scanned                   │
-                             │                                                         │
-                             │  📦 Data actually needed: 3 columns × ~100M rows (Q2)   │
-                             │     = 300 MILLION column values                          │
-                             │                                                         │
-                             │  ✅ Waste: 0% — every byte read IS used                  │
-                             │  ✅ Disk I/O: 2 GB read = exactly what's needed         │
-                             │  ✅ Time: ~2 seconds                                     │
-                             │                                                         │
-                             └─────────────────────────────────────────────────────────┘
-                             
-                             
-                               ═══════════════════════════════════════════════════════════
-                               BONUS: COLUMNAR COMPRESSION IS BETTER
-                               ═══════════════════════════════════════════════════════════
-                             
-                               Because columnar storage groups SAME-TYPE data together,
-                               compression is dramatically more effective.
-                             
-                               ┌─────────────────────────────────────────────────────────┐
-                               │                                                         │
-                               │  Row-oriented: compress mixed types together            │
-                               │  [1250 | Alice | a@x.com | US] — int, string, string,  │
-                               │                                  string — hard to        │
-                               │  [3400 | Bob   | b@x.com | EU]   find patterns          │
-                               │  Compression ratio: ~2:1                                 │
-                               │                                                         │
-                               │  Columnar: compress same types together                 │
-                               │  [US, EU, APAC, US, EU, LATAM, ...]                     │
-                               │  Only 5 distinct values in 1B rows →                    │
-                               │  Store once: [US, EU, APAC, LATAM, EMEA]                │
-                               │  Then store: [0, 1, 2, 0, 1, 3, 4, ...]                │
-                               │  Compression ratio: 50:1 to 100:1                       │
-                               │                                                         │
-                               └─────────────────────────────────────────────────────────┘
-                             
-                             
-                               ═══════════════════════════════════════════════════════════
-                               RESULT COMPARISON
-                               ═══════════════════════════════════════════════════════════
-                             
-                                                 Row-Oriented         Columnar
-                                                 ─────────────        ─────────
-                               Data scanned      150 GB               2 GB
-                               Data kept         2 GB                 2 GB
-                               Waste             148 GB               0 GB
-                               Disk I/O          75x more             baseline
-                               Compression       2:1                  50:1 (effective)
-                               Time              42 seconds           1.8 seconds
-                               Memory needed     32 GB                512 MB
-                             
-                               Cost per query    $0.04 (compute)      $0.001 (75% less)
-                               (unoptimized)
-                               
 ```
+
+**The key insight:** Most analytics queries read a FEW columns across MANY rows ("average spend," "count of users," "total revenue by month"). Row-oriented storage forces you to read ALL columns even when you only need one. Columnar storage lets you read ONLY the columns you need.
+
+Analogy — The Library vs. The Encyclopedia 📚
+
+**Row-oriented storage is like a set of encyclopedias.** Volume 1 covers Aardvark to Antarctica. Volume 2 covers Antarctica to Brazil. Each volume contains everything about that page range — history, geography, economy, culture — mixed together. If you want to know the "population" of every country, you have to flip through ALL volumes and extract just the population number from each page. You read thousands of pages about history, geography, and culture that you don't need.
+
+**Columnar storage is like having a single "Population of Every Country" reference sheet** stored separately from a "Capital City of Every Country" sheet, stored separately from an "Official Language" sheet. If you want to know the population of every country, you grab ONE sheet. The other 20 sheets stay on the shelf. You read exactly what you need and nothing more.
+
+In the analytics world, this difference means: a query that takes **2 minutes** on a row-oriented database takes **2 seconds** on a columnar database — and uses 60x less memory.
+
+---
+
+### Example:
+
+A visual comparison of how the same analytics query runs on row vs. columnar storage.
+
+---
+
+**SCENARIO:** A retail company with 1 billion sales records needs to calculate:
+*"What was the total revenue per region in Q2 2026?"*
+
+The table has 20 columns — but the query only needs **3**: `region`, `amount`, `date`.
+
+```text
+═══════════════════════════════════════════════════════════════
+  ROW-ORIENTED DATABASE (PostgreSQL)
+═══════════════════════════════════════════════════════════════
+
+  QUERY: SELECT region, SUM(amount) FROM sales
+         WHERE date BETWEEN '2026-04-01' AND '2026-06-30'
+         GROUP BY region;
+
+           WHAT THE DATABASE READS FROM DISK:
+
+           ┌─────────────────────────────────────────────────────────┐
+           │                                                         │
+           │  [1 | product_id | 20 cols | region | amount | date |   │
+           │        customer_id | payment_method | ... | ...]         │
+           │                                                         │
+           │  Each row is read COMPLETELY — all 20 columns — even    │
+           │  though only 3 columns are needed.                      │
+           │                                                         │
+           │                            ▼                             │
+           │                                                         │
+           │  📦 Data read from disk:  20 columns × 1B rows          │
+           │     = 20 BILLION column values scanned                  │
+           │                                                         │
+           │  📦 Data actually needed: 3 columns × ~100M rows (Q2)   │
+           │     = 300 MILLION column values                          │
+           │                                                         │
+           │  ❌ Waste: 98.5% of read data is thrown away             │
+           │  ❌ Disk I/O: 150 GB read, when only 2 GB is needed     │
+           │  ❌ Time: ~45 seconds (most spent reading & discarding) │
+           │                                                         │
+           └─────────────────────────────────────────────────────────┘
+
+
+           ═══════════════════════════════════════════════════════════
+           COLUMNAR DATABASE (Snowflake / ClickHouse)
+           ═══════════════════════════════════════════════════════════
+
+           WHAT THE DATABASE READS FROM DISK:
+
+           ┌─────────────────────────────────────────────────────────┐
+           │                                                         │
+           │    17 OTHER COLUMNS                    3 NEEDED COLUMNS │
+           │    (NEVER TOUCHED!)                    (READ & USED)    │
+           │                                     ┌──────────────────┐│
+           │  product_id     ─── NOT READ ──►    │                  ││
+           │  customer_id    ─── NOT READ ──►    │  region column   ││
+           │  payment_method ─── NOT READ ──►    │  ─────────────── ││
+           │  discount       ─── NOT READ ──►    │  us-east         ││
+           │  shipping_cost  ─── NOT READ ──►    │  us-west         ││
+           │  tax            ─── NOT READ ──►    │  eu-west         ││
+           │  ...            ─── NOT READ ──►    │  ap-southeast    ││
+           │  ...            ─── NOT READ ──►    │  ... (1B values) ││
+           │  ...            ─── NOT READ ──►    │                  ││
+           │  ...            ─── NOT READ ──►    │  amount column   ││
+           │                                     │  ─────────────── ││
+           │                                     │  1250            ││
+           │                                     │  3400            ││
+           │                                     │  890             ││
+           │                                     │  ...             ││
+           │                                     │                  ││
+           │                                     │  date column     ││
+           │                                     │  ─────────────── ││
+           │                                     │  2026-04-01      ││
+           │                                     │  2026-04-01      ││
+           │                                     │  ...             ││
+           │                                     └──────────────────┘│
+           │                                                         │
+           │  📦 Data read from disk:  3 columns × 1B rows           │
+           │     = 3 BILLION column values scanned                   │
+           │                                                         │
+           │  📦 Data actually needed: 3 columns × ~100M rows (Q2)   │
+           │     = 300 MILLION column values                         │
+           │                                                         │
+           │  ✅ Waste: 0% — every byte read IS used                 │
+           │  ✅ Disk I/O: 2 GB read = exactly what's needed         │
+           │  ✅ Time: ~2 seconds                                    │
+           │                                                         │
+           └─────────────────────────────────────────────────────────┘
+
+
+               ═══════════════════════════════════════════════════════════
+               BONUS: COLUMNAR COMPRESSION IS BETTER
+               ═══════════════════════════════════════════════════════════
+
+               Because columnar storage groups SAME-TYPE data together,
+               compression is dramatically more effective.
+
+               ┌─────────────────────────────────────────────────────────┐
+               │                                                         │
+               │  Row-oriented: compress mixed types together            │
+               │  [1250 | Alice | a@x.com | US] — int, string, string,  │
+               │                                  string — hard to        │
+               │  [3400 | Bob   | b@x.com | EU]   find patterns          │
+               │  Compression ratio: ~2:1                                 │
+               │                                                         │
+               │  Columnar: compress same types together                 │
+               │  [US, EU, APAC, US, EU, LATAM, ...]                     │
+               │  Only 5 distinct values in 1B rows →                    │
+               │  Store once: [US, EU, APAC, LATAM, EMEA]                │
+               │  Then store: [0, 1, 2, 0, 1, 3, 4, ...]                │
+               │  Compression ratio: 50:1 to 100:1                       │
+               │                                                         │
+               └─────────────────────────────────────────────────────────┘
+
+
+               ═══════════════════════════════════════════════════════════
+               RESULT COMPARISON
+               ═══════════════════════════════════════════════════════════
+
+                                 Row-Oriented         Columnar
+                                 ─────────────        ─────────
+               Data scanned      150 GB               2 GB
+               Data kept         2 GB                 2 GB
+               Waste             148 GB               0 GB
+               Disk I/O          75x more             baseline
+               Compression       2:1                  50:1 (effective)
+               Time              42 seconds           1.8 seconds
+               Memory needed     32 GB                512 MB
+
+               Cost per query    $0.04 (compute)      $0.001 (75% less)
+               (unoptimized)
+```
+                               
 
 day - 13
 
@@ -1440,8 +1452,8 @@ The name comes from mathematics: in chemistry, "isomorphic" means "having the sa
 A visual flow comparison of how Server-Only, Client-Only (SPA), and Isomorphic handle the same scenario — displaying a user profile page.
 
 
-```
 A user visits example.com/profile/alice. The page needs to fetch Alice's data from a database, render her profile, and handle interactions (edit profile button).
+```text
 ═══════════════════════════════════════════════════════════════
   APPROACH 1: SERVER-ONLY (Traditional PHP/Rails)
 ═══════════════════════════════════════════════════════════════
@@ -1596,7 +1608,7 @@ Why slopsquatting is different and more dangerous:
 
  A slopsquatting operation targeted 47 popular open-source projects simultaneously. The attacker registered domains like prisma-orm.io, tailwind-css.org, zod-schema.com, and set up AI-generated documentation sites for each. The fake sites outranked the real documentation on Google for 3 months. The attacker's estimated profit from malicious npm packages and ad revenue: ~$300,000 before the operation was disrupted. The attack cost per site: ~$12.
 
- ```
+```text
  ═══════════════════════════════════════════════════════════════
    THE SCALE PROBLEM
  ═══════════════════════════════════════════════════════════════
@@ -1620,7 +1632,7 @@ Why slopsquatting is different and more dangerous:
                                                   100 more exist)
  
    ROI for attacker    Low (ransom model)        High (malware + ads + SEO)
- ```
+```
 
  ---
 
@@ -1642,7 +1654,7 @@ The three problems that "order of data" covers are:
 
 A visual walkthrough of the three problems and their solutions.
 
-```
+```text
 ═══════════════════════════════════════════════════════════════
   SCENARIO: You run SELECT * FROM users LIMIT 3
   (No ORDER BY specified)
@@ -1725,6 +1737,7 @@ Principal Drift is the gradual separation between a human authority who authoriz
 
 In traditional systems, the chain is simple: a human logs in, performs an action, and the audit log records "User X did Y at time Z." In agentic systems, the chain looks like this:
 
+```text
 TRADITIONAL SYSTEM:
 ───────────────────
 
@@ -1778,14 +1791,15 @@ AGENTIC SYSTEM (WITH PRINCIPAL DRIFT):
      The CRM Agent? No one knows.
   ❌ The "principal" (Alice) and the "executor" (billing-svc-v3)
      have DRIFTED apart.
+```
 
 ### Example:
 
 A flow comparison of a customer refund processed without and with principal drift safeguards.
 
-```
 SCENARIO: A customer service rep (Alice) needs to process a $50 refund for Customer Bob. Her company uses an agentic AI system.
 
+```text
 ═══════════════════════════════════════════════════════════════
   ❌ WITHOUT PRINCIPAL DRIFT GOVERNANCE
 ═══════════════════════════════════════════════════════════════
@@ -1944,6 +1958,7 @@ Platform Engineering 2.0 is the evolution of Internal Developer Platforms (IDPs)
 
 The core shift: AI agents are now writing, reviewing, testing, and deploying code autonomously. The bottleneck has shifted from writing code to delivering it safely and quickly — and the platform must evolve to handle this new reality.
 
+```text
 ═══════════════════════════════════════════════════════════════
   PLATFORM ENGINEERING 1.0 vs. 2.0
 ═══════════════════════════════════════════════════════════════
@@ -1977,14 +1992,15 @@ The core shift: AI agents are now writing, reviewing, testing, and deploying cod
   Response         Reactive (fix issues)      Proactive (self-healing,
                    post-deploy)               self-optimizing, drift
                                               detection pre-deploy)
+```
 
 ### Example:
 
 A visual comparison of how a developer deploys a new microservice on Platform 1.0 vs. Platform 2.0 — and what happens when an AI agent does the same task.
 
-```
 SCENARIO: A team needs to deploy a new "payment-service" with GPU-accelerated fraud detection, strict cost controls, and compliance with PCI DSS.
 
+```text
 ═══════════════════════════════════════════════════════════════
   PLATFORM 1.0: Developer Deploys a Service
 ═══════════════════════════════════════════════════════════════
@@ -2101,6 +2117,7 @@ Admission Control is a gatekeeper that intercepts requests to a system before th
 
 The concept originated in Kubernetes (where Admission Controllers intercept API server requests before pod creation), but applies broadly to any system where you need to enforce "this must always be true" rules:
 
+```text
 WHERE ADMISSION CONTROL SITS:
 ═══════════════════════════════════════════════════════════════
 
@@ -2144,17 +2161,18 @@ WHERE ADMISSION CONTROL SITS:
   KEY: At the admission control stage, the request passes
   through AUTHENTICATION (who) and AUTHORIZATION (can they)
   before reaching ADMISSION CONTROL (should they).
+```
 
 ### Example:
 
 A visual flow of how Admission Control works in Kubernetes — showing a pod creation request going through multiple admission controllers before being accepted or rejected.
 
-```
 A developer tries to deploy a pod. The organization has three policies:
-Every pod MUST have resource limits
-Every pod MUST have a sidecar proxy injected
-NO pod can run as root(3/11)
+- Every pod MUST have resource limits
+- Every pod MUST have a sidecar proxy injected
+- NO pod can run as root(3/11)
 
+```text
 ═══════════════════════════════════════════════════════════════
   THE POD CREATION REQUEST
 ═══════════════════════════════════════════════════════════════
@@ -2299,6 +2317,7 @@ day - 21
 
 The term was popularized by a June 2026 HackerNoon article describing how a tool (postman2pytest) shipped as "Production/Stable" v1.0 with a fully green test suite — only for a fuzzer (property-based testing) to immediately find 5 categories of bugs that the green tests had completely missed.
 
+```text
 ═══════════════════════════════════════════════════════════════
   THE COMFORT BLANKET
 ═══════════════════════════════════════════════════════════════
@@ -2347,13 +2366,14 @@ The term was popularized by a June 2026 HackerNoon article describing how a tool
     │            — Mikhail Golikov, HackerNoon, June 2026      │
     │                                                         │
     └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual walkthrough of how a tool with a 100% green test suite shipped to production — and immediately failed on real-world input.
 
-```
 A developer builds postman2pytest — a tool that converts Postman API collections (JSON files) into pytest test suites. The test suite is 100% green. The tool is released as v1.0 "Production/Stable."
+```text
 ═══════════════════════════════════════════════════════════════
   THE GREEN TEST SUITE (What the developer tested)
 ═══════════════════════════════════════════════════════════════
@@ -2497,6 +2517,7 @@ day - 22
 Attribute-Based Access Control (ABAC) is an authorization model that grants or denies access based on attributes of the user, the resource, the action, and the environment — evaluated against a set of policies written as rules. Instead of asking "who is this user?" (RBAC) or "what list is this user on?" (ACL), ABAC asks "does the full context of this request match the policy?"
 
 ABAC evaluates multiple attributes simultaneously to make a decision:
+```text
 WHAT ABAC EVALUATES:
 ═══════════════════════════════════════════════════════════════
 
@@ -2544,12 +2565,12 @@ WHAT ABAC EVALUATES:
                             │                                    │
                             │  → ALLOW ✅                        │
                             └──────────────────────────────────┘
+```
 
 ### Example:
 
 A visual flow of how ABAC handles a real-world scenario that would be impossible to express with roles alone.
 
-```
 A healthcare system. A doctor (Alice) needs to access a patient's medical record. The system has complex policies:
 
 - Doctors can read records of patients they are actively treating (4/12)
@@ -2558,6 +2579,7 @@ A healthcare system. A doctor (Alice) needs to access a patient's medical record
 - Access to mental health records requires additional clearance
 - Auditors can view access logs but not the records themselves
 - All access is logged regardless of allow/deny
+```text
 ═══════════════════════════════════════════════════════════════
   THREE ACCESS REQUESTS — THREE DIFFERENT OUTCOMES
 ═══════════════════════════════════════════════════════════════
@@ -2698,6 +2720,7 @@ A healthcare system. A doctor (Alice) needs to access a patient's medical record
     │          at 7:00 AM unless renewed.           │
     │                                              │
     └──────────────────────────────────────────────────────────┘
+```
 ---
 
 day - 23
@@ -2709,6 +2732,7 @@ day - 23
 Engineering Complexity is the study of what makes software hard to build, understand, and change — and the discipline of minimizing it. It distinguishes between two fundamentally different kinds of complexity: essential complexity (the inherent difficulty of the problem you're solving) and accidental complexity (the difficulty you create for yourself through poor design, wrong tools, or unnecessary abstractions).
 
 The core insight — first articulated by Fred Brooks in "No Silver Bullet" (1986) — is that essential complexity cannot be eliminated (the problem is what it is), but accidental complexity is entirely our own creation and we have an ethical obligation to minimize it.
+```text
 ═══════════════════════════════════════════════════════════════
   THE TWO KINDS OF COMPLEXITY
 ═══════════════════════════════════════════════════════════════
@@ -2761,9 +2785,11 @@ The core insight — first articulated by Fred Brooks in "No Silver Bullet" (198
                             └─────────────────────────────────────────────────────┘   │
                             │                                                         │
                             └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
+```text
 ═══════════════════════════════════════════════════════════════
   HOW COMPLEXITY KILLS ENGINEERING ORGANIZATIONS
 ═══════════════════════════════════════════════════════════════
@@ -2785,6 +2811,7 @@ The core insight — first articulated by Fred Brooks in "No Silver Bullet" (198
   │            Everyone is "managing complexity."            │
   │                                                         │
   └─────────────────────────────────────────────────────────┘
+```
 
   THE REALITY DISTORTION:
 
@@ -2816,6 +2843,7 @@ Karate DSL is an open-source test automation framework that combines API testing
 
 The revolutionary idea behind Karate: API tests should NOT require programming knowledge. Product owners, QA analysts, and developers should all be able to read, write, and review the same test files.
 
+```text
 ═══════════════════════════════════════════════════════════════
   WHAT KARATE DSL REPLACES
 ═══════════════════════════════════════════════════════════════
@@ -2871,17 +2899,19 @@ The revolutionary idea behind Karate: API tests should NOT require programming k
     │  → Each line is self-explanatory English                │
     │                                                         │
     └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual walkthrough of a complete test scenario in Karate DSL — showing an API test, a data-driven test, and a mock server — all without writing any programming code.
 
-```
 SCENARIO: An e-commerce API. You need to test:
 1. Creating a product (POST)
 2. Looking up a product by ID (GET)
 3. Testing with MULTIPLE product types (data-driven)
 4. Mocking the payment service for isolated testing
+
+```text
 ═══════════════════════════════════════════════════════════════
   TEST 1: API CRUD — Create and Verify a Product
 ═══════════════════════════════════════════════════════════════
@@ -3063,6 +3093,7 @@ Agentic SRE (Site Reliability Engineering) is the evolution of traditional SRE p
 
 The fundamental shift: In traditional SRE, humans operate systems and occasionally make mistakes. In Agentic SRE, both humans AND AI agents operate systems — and agents operate at machine speed, at massive scale, and with unpredictable behavior patterns. The SRE team must now be reliable for the agents (the platform they depend on) and reliable despite the agents (the mistakes they make).
 
+```text
 ═══════════════════════════════════════════════════════════════
   THE SRE EVOLUTION
 ═══════════════════════════════════════════════════════════════
@@ -3089,14 +3120,15 @@ The fundamental shift: In traditional SRE, humans operate systems and occasional
   Human error               Automation bugs             Agent misbehavior
   is expected.              are expected.               is expected AND
                                                          harder to predict.
+```
 
 ### Example:
 
 A visual comparison of how Traditional SRE vs. Agentic SRE handles the same scenario — a production incident where a new deployment causes increased error rates.
 
-```
 A canary deployment of "payment-service v2.3" causes a 5% increase in 500 errors. The system must respond within 3 minutes to stay within the error budget.
 
+```text
 ═══════════════════════════════════════════════════════════════
   TRADITIONAL SRE (Humans + Scripted Automation)
 ═══════════════════════════════════════════════════════════════
@@ -3203,6 +3235,7 @@ Lift-and-Shift (also called rehosting) is a cloud migration strategy where you m
 
 It is the fastest path to the cloud, but it leaves the application's internal architecture untouched. You get the operational benefits of the cloud (elastic infrastructure, pay-as-you-go, managed data centers) without any of the architectural benefits (auto-scaling, managed services, serverless, microservices).
 
+```text
 ═══════════════════════════════════════════════════════════════
   THE THREE CLOUD MIGRATION STRATEGIES
 ═══════════════════════════════════════════════════════════════
@@ -3253,12 +3286,13 @@ It is the fastest path to the cloud, but it leaves the application's internal ar
                                 │  • Cloud benefits: MINIMAL (infrastructure only)        │
                                 │                                                         │
                                 └─────────────────────────────────────────────────────────┘                            
+```
 
 ### Example:
 
 A visual walkthrough of the 5-question decision framework from the DZone article — helping you decide for each workload whether to lift-and-shift or modernize.
 
-```
+```text
 ═══════════════════════════════════════════════════════════════
   THE 5-QUESTION DECISION FRAMEWORK
 ═══════════════════════════════════════════════════════════════
@@ -3412,6 +3446,7 @@ OpAMP (Open Agent Management Protocol) is a network protocol designed to remotel
 
 Before OpAMP, managing a fleet of data agents looked like this:
 
+```text
 BEFORE OpAMP — Every Agent, a Different Management Style:
 ═══════════════════════════════════════════════════════════════
 
@@ -3439,6 +3474,7 @@ BEFORE OpAMP — Every Agent, a Different Management Style:
   → No unified view of agent health
   → Config changes require SSH, scripts, or manual restarts
   → Zero awareness of agent version drift
+```
 
 OpAMP solves this by defining a single, standard protocol that any agent can implement, and any management server can speak. It's the "Kubernetes for agents" — not the container orchestration, but the control plane that tells agents what to do and reports back on their health.
 
@@ -3446,12 +3482,12 @@ OpAMP solves this by defining a single, standard protocol that any agent can imp
 
 A visual walkthrough of OpAMP's core operations — showing how it manages a fleet of OpenTelemetry Collectors across 3 scenarios.
 
-```
 An observability team manages 500 OpenTelemetry Collectors across 3 data centers. They need to:
 1. Roll out a new config to all agents
 2. Detect a misconfigured agent
 3. Upgrade agent versions
 
+```text
 ═══════════════════════════════════════════════════════════════
   SCENARIO 1: Rolling Out a New Config to 500 Agents
 ═══════════════════════════════════════════════════════════════
@@ -3523,6 +3559,7 @@ day - 30
 Self-Healing Infrastructure is a system design approach where infrastructure automatically detects, diagnoses, and recovers from failures without human intervention. Instead of waiting for an engineer to be paged, log in, investigate, and fix the problem, the infrastructure itself monitors its own health, identifies deviations from the desired state, and executes corrective actions — often within seconds or minutes of the failure occurring.
 
 It is NOT "magic" or "AI that fixes everything." It is a structured set of automated feedback loops at every layer of the stack:
+```text
 THE SELF-HEALING LOOP:
 ═══════════════════════════════════════════════════════════════
 
@@ -3607,13 +3644,15 @@ THE SELF-HEALING LOOP:
          │   → Escalate to human OR try alternative action      │
          │                                                      │
          └──────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual walkthrough of a 3-node Kubernetes cluster handling 4 different failures — each one healed automatically at a different layer.
 
-```
 An e-commerce platform runs on a 3-node Kubernetes cluster. The "checkout-service" has 3 replicas, a database on persistent storage, and a Redis cache.
+
+```text
 ═══════════════════════════════════════════════════════════════
   FAILURE #1: Pod Crash (L1 — Instant Restart)
 ═══════════════════════════════════════════════════════════════
@@ -3841,6 +3880,8 @@ day - 31
 Queue-Based Architecture is a design pattern where services communicate asynchronously through an intermediary message queue, instead of calling each other synchronously and waiting for a response. A producer (sender) places a message into a queue, and a consumer (receiver) picks it up and processes it when ready. The two sides are decoupled — they don't need to know about each other, don't need to be running at the same time, and don't need to scale together.
 
 It's the architectural answer to a fundamental problem: what happens when the rate of work being produced exceeds the rate at which it can be processed?
+
+```text
 THE CORE IDEA:
 ═══════════════════════════════════════════════════════════════
 
@@ -3871,13 +3912,15 @@ THE CORE IDEA:
   If consumer is down → message waits safely in queue.
   If 10,000 messages arrive → queue buffers them.
   Producer and consumer can be up at DIFFERENT times.
+```
 
 ### Example:
 
 A visual walkthrough of how a queue-based architecture handles four real-world scenarios — showing why the queue is the essential glue.
 
-```
 An e-commerce platform. When a customer places an order, multiple things need to happen: email confirmation, inventory deduction, payment processing, analytics tracking. These are processed through a message queue.
+
+```text
 ═══════════════════════════════════════════════════════════════
   THE ORDER FLOW WITH A QUEUE
 ═══════════════════════════════════════════════════════════════

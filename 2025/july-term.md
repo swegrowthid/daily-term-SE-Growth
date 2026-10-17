@@ -508,7 +508,7 @@ Types of Replication:
 
 E-commerce Database Replication(scenario: Amazon-like online store)
 
-```
+```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │   Master    │    │   Slave 1   │    │   Slave 2   │
 │  Database   │───▶│  (US East)  │    │  (Europe)   │
@@ -764,7 +764,7 @@ One important aspect of batch processing is the execution of the job by using ma
 
 - Payroll Processing System
 
-```
+```text
 Monthly Salary Calculation:
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Employee DB   │───▶│  Batch Processor │───▶│  Salary Reports │
@@ -1073,7 +1073,7 @@ N-Tier Architecture is a software design pattern that separates an application i
 
 - 3-Tier Architecture:
 
-```
+```text
 ┌─────────────────────┐
 │   Presentation      │ ← User Interface (Web/Mobile/Desktop)
 │      Tier           │
@@ -1087,7 +1087,7 @@ N-Tier Architecture is a software design pattern that separates an application i
 
 - 4-Tier Architecture:
 
-```
+```text
 ┌─────────────────────┐
 │   Presentation      │ ← Frontend (React, Angular)
 ├─────────────────────┤

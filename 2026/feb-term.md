@@ -484,7 +484,7 @@ Think of it like having a super-smart assistant who can instantly look up inform
 
 **Multi-ERP RAG Architecture**
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │                    User Interface                         │
 │  "What's our inventory value across all divisions?"       │
@@ -518,7 +518,7 @@ Think of it like having a super-smart assistant who can instantly look up inform
 
 Manufacturing Company
 
-```
+```text
 Company Profile
 
 GlobalTech Manufacturing Inc.
@@ -862,6 +862,7 @@ The acronym MTTR is confusing because it has 4 different meanings:
 
 Visual Comparison
 
+```text
 Incident Timeline:
 ═══════════════════════════════════════════════════════════
 
@@ -888,12 +889,13 @@ Incident Timeline:
 60min ────► Incident Closed & Verified
 │
 │ ◄──── Mean Time to RESOLVE (60min) ◄── Full lifecycle
+```
 
 ### Example:
 
 E-Commerce Website Crash
 
-```
+```text
 Company: ShopFast.com
 Date: Black Friday, 2:30 PM
 Impact: Checkout process down, losing $50,000/minute
@@ -1049,7 +1051,7 @@ Server-to-Server (S2S) Tracking is a method of collecting and transmitting user 
 
 E-commerce Conversion Tracking
 
-```
+```text
 The Business Goal
 
 Company: ShoesRUs
@@ -1304,7 +1306,7 @@ Sierra Charts is a professional-grade desktop trading and charting platform desi
 
 Day Trading Session
 
-```
+```text
 Pre-Market Setup (8:00 AM)
 
 Trader's Sierra Charts Workspace:
@@ -1630,6 +1632,7 @@ JSP code is written in .jsp files and gets compiled into servlets by the web con
 
 **Core Components of JSP Code**
 
+```text
 ┌──────────────────────────────────────────────────┐
 │ JSP File Structure │
 ├──────────────────────────────────────────────────┤
@@ -1653,6 +1656,7 @@ JSP code is written in .jsp files and gets compiled into servlets by the web con
 │ └─ <jsp:include> Standard operations │
 │ │
 └──────────────────────────────────────────────────┘
+```
 
 ### Example:
 
@@ -1867,6 +1871,7 @@ Key principle: There's no "primary" or "backup" region—all regions are equal a
 
 Active-Active vs Active-Passive
 
+```text
 ┌──────────────────────────────────────────────────────┐
 │ Active-Passive (Traditional DR) │
 ├──────────────────────────────────────────────────────┤
@@ -1945,12 +1950,13 @@ Layer 4: Shared Services
 ├─ Centralized authentication
 ├─ Monitoring & observability
 └─ Cross-region networking (VPN/peering)
+```
 
 ### Example:
 
 E-Commerce Platform (Shopify-style)
 
-```
+```text
 Company: GlobalShop Inc.
 Requirements:
 
@@ -2463,6 +2469,7 @@ Simple analogy: Like using disposable plates at a party instead of washing dishe
 
 How Ephemeral Runners Work
 
+```text
 ┌─────────────────────────────────────────────────────┐
 │ Ephemeral Runner Lifecycle │
 └─────────────────────────────────────────────────────┘
@@ -2506,6 +2513,7 @@ Step 4: Cleanup & Destruction
 └─────────────────────────────────┘
 │
 ▼
+```
 [Done] ✅
 
 ### Example:

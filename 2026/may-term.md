@@ -840,6 +840,7 @@ MDASH is Microsoft's new AI-powered vulnerability-finding system that uses 100+ 
 Think of it as a team of AI security auditors, not just a single scanner:
 
 
+```text
 MDASH Pipeline (5 stages):
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
 │ PREPARE  │ →  │   SCAN   │ →  │ VALIDATE │ →  │  DEDUP   │ →  │  PROVE   │
@@ -848,6 +849,7 @@ MDASH Pipeline (5 stages):
 │ surface  │    │ auditors  │    │ argue for │    │ findings  │    │ exploit  │
 │          │    │ hunt bugs │    │ & against │    │           │    │ (PoC)    │
 └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+```
 Why it matters (results):
 
 Benchmark	Score
@@ -906,6 +908,7 @@ Think of it like scaffolding left on a building after construction is done. It s
 
 How It Happens
 
+```text
   Dev adds a flag: if (newCheckoutFlow) { ... }
         │
         ▼
@@ -918,6 +921,7 @@ How It Happens
   A year later: 2 branches, 4x tests, no one remembers which is "real"
         ▼
   💸 That's flag debt.
+```
 
 ### Example:
 

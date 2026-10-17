@@ -450,7 +450,7 @@ Conway's Law states that "organizations which design systems... are constrained 
 
 cross-functional feature teams
 
-```
+```text
 🚀 CROSS-FUNCTIONAL FEATURE TEAMS
 =================================
 
@@ -1740,7 +1740,7 @@ Open Policy Agent (OPA) is a general-purpose policy engine that enables unified 
 Company File Access Control
 Scenario: Employees need different access levels to company documents.
 
-```
+```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │   Web App   │    │   Mobile    │    │   API       │
 │             │    │   App       │    │   Service   │

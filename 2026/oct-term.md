@@ -21,7 +21,7 @@ The residual step matters. Without it, the output drifts toward the intersection
 
 Leviathan et al. (2022) and Chen et al. (2023) introduced the method.
 
-```
+```text
 WITHOUT vs WITH SPECULATIVE DECODING
 ═══════════════════════════════════════════════════════════════════════════
 
@@ -108,7 +108,7 @@ The arithmetic of the speed-up is simple to state and hard to predict. Only the 
 
 Where the draft tokens come from decides the ceiling and the operational cost:
 
-```
+```text
   PROPOSAL METHOD LANDSCAPE (published 2026 figures)
   ┌────────────────────────┬───────────────────────┬──────────────────────────────┐
   │ METHOD                 │ TYPICAL GAIN          │ TRADE-OFF                    │
@@ -147,7 +147,7 @@ The go/no-go rule is the acceptance rate, measured on real traffic:
 
 The workload is friendly to speculation. Completion continues code that already sits in the prompt. Identifiers, brackets, and JSON keys repeat from the context. A cheap proposer can guess several of them before the big model speaks.
 
-```
+```text
 STEP-BY-STEP — one completion of a JSON field, K = 5 proposals
 ═══════════════════════════════════════════════════════════════════════════
 
@@ -183,7 +183,7 @@ STEP-BY-STEP — one completion of a JSON field, K = 5 proposals
 
 The team enables an EAGLE-3 speculator head for their model family, one configuration change:
 
-```
+```text
 SPECULATOR ON — vLLM, K = 5, feature-level draft from a trained head
 ────────────────────────────────────────────────────────────────────
 
@@ -210,7 +210,7 @@ SPECULATOR ON — vLLM, K = 5, feature-level draft from a trained head
 
 Then peak hours arrive, and the same setting backfires.
 
-```
+```text
 PEAK HOURS — the same GPU serves a batch, and the draft competes with it
 ═══════════════════════════════════════════════════════════════════════════
 
@@ -311,7 +311,7 @@ MODULO HASHING vs CONSISTENT HASHING          (4 nodes, then add 1 node)
 
 The repair is a **hash ring with virtual nodes**. A single point per node gives a node a random and often huge arc. Many points per node (16, 100, 256 — the number is a tuning knob) chop the ring into small arcs and drive the load error down.
 
-```
+```text
 WHY ONE POINT PER NODE IS NOT ENOUGH
 ═══════════════════════════════════════════════════════════════════
  ONE POINT PER NODE                   MANY POINTS PER NODE
@@ -379,7 +379,7 @@ Round-robin routing destroys that reuse. The prefix lands on R7, then R2, then R
 
 The fix is to route on the prefix instead of a random id, and to keep a load cap so affinity does not create a hot replica.
 
-```
+```text
 THE ROUTER — PREFIX AFFINITY WITH A LOAD CAP
 ═══════════════════════════════════════════════════════════════════════
  request: prefix P (2,400 tokens) + adapter "bantukode"
@@ -870,7 +870,7 @@ The idea comes from the operating system. Virtual memory gives a process a flat 
 
 Classic serving systems store the cache of a request as one contiguous tensor. Deep learning frameworks want contiguous tensors, so the scheduler reserves a chunk sized for the **maximum** length (for example 2048 tokens) before the first token exists. Three kinds of waste follow:
 
-```
+```text
 THE THREE WASTES OF CONTIGUOUS RESERVATION
 ════════════════════════════════════════════════════════════════════════════
 
@@ -902,7 +902,7 @@ THE THREE WASTES OF CONTIGUOUS RESERVATION
 
 PagedAttention replaces the one big chunk with a pool of equal blocks and a lookup table:
 
-```
+```text
 NAIVE CONTIGUOUS vs PAGED BLOCKS
 ════════════════════════════════════════════════════════════════════════════
 
@@ -940,7 +940,7 @@ NAIVE CONTIGUOUS vs PAGED BLOCKS
 
 **One decode step through the table.** The kernel does not stream one tensor. It walks the block table of each sequence and gathers the keys and values of the listed blocks:
 
-```
+```text
 A DECODE STEP — how the kernel reads a non-contiguous cache
 ════════════════════════════════════════════════════════════════════════════
 
@@ -971,7 +971,7 @@ A DECODE STEP — how the kernel reads a non-contiguous cache
 
 **Sharing and copy-on-write.** Two sequences that hold the same prefix can point at the same physical blocks. A reference count tracks the users of a block. Read is free. Write is not. When a sequence must write into a shared block, the runtime copies the block for that sequence first, then writes. This is the copy-on-write rule from the OS, applied to the KV cache:
 
-```
+```text
 COPY-ON-WRITE ON A SHARED PREFIX
 ════════════════════════════════════════════════════════════════════════════
 
@@ -1003,7 +1003,7 @@ COPY-ON-WRITE ON A SHARED PREFIX
 
 Measured numbers from the paper:
 
-```
+```text
 PUBLISHED RESULTS (vLLM paper, SOSP 2023)
 ════════════════════════════════════════════════════════════════════════════
 
@@ -1097,7 +1097,7 @@ CONTIGUOUS RESERVATION — memory full, GPU mostly idle
 
 **After: paged KV cache.** The same 40 GiB pool now holds blocks, and the scheduler admits requests by block count.
 
-```
+```text
 PAGED KV CACHE — the same 40 GiB, used in 16-token steps
 ════════════════════════════════════════════════════════════════════════════
 
@@ -1146,7 +1146,7 @@ PREFIX SHARING — one copy of the system prompt, many users
 
 The operational numbers that matter, before and after:
 
-```
+```text
 BEFORE / AFTER ON THE SAME CARD
 ════════════════════════════════════════════════════════════════════════════
 
@@ -1438,7 +1438,7 @@ theta_j  =  base ^ ( -2 (j - 1) / d )        base = 10,000 by default
 
 Early pairs turn fast (short wavelength). Late pairs turn slow (long wavelength). The set forms a geometric ladder. A fast pair separates nearby tokens. A slow pair separates far tokens.
 
-```
+```text
 NAIVE ADDITIVE vs ROTARY  —  how the score sees position
 ════════════════════════════════════════════════════════════════════════════
 
@@ -1521,7 +1521,7 @@ THE INPUT — why 32K fails on an 8K-trained model (head_dim 128, base 10,000)
 
 The team compares three repairs on the same card and the same data:
 
-```
+```text
 THREE REPAIRS — 8,192 -> 32,768 (s = 4), same 7B model
 ════════════════════════════════════════════════════════════════════════════
 
@@ -1548,7 +1548,7 @@ THREE REPAIRS — 8,192 -> 32,768 (s = 4), same 7B model
 
 The result, after a short continued-training pass:
 
-```
+```text
 BEFORE / AFTER ON THE SAME 7B MODEL
 ════════════════════════════════════════════════════════════════════════════
 
@@ -1598,7 +1598,7 @@ The core idea is one split: **deploy** is not **release**. Deploy puts the new c
 
 The naive path has no gap. You stop the old version. You start the new version on the same hosts. During the swap, no host serves traffic.
 
-```
+```text
 NAIVE SWAP (one environment)              BLUE-GREEN (two environments)
 ══════════════════════════════════        ══════════════════════════════════════
 
@@ -1648,7 +1648,7 @@ The cost is honest. Blue-green doubles the running fleet for the length of the w
 
 **In Kubernetes.** The standard tool in 2026 is Argo Rollouts. It replaces the `Deployment` kind with a `Rollout` kind. Two `Service` objects point the traffic:
 
-```
+```text
 KUBERNETES MECHANICS (Argo Rollouts blueGreen strategy)
 ═══════════════════════════════════════════════════════════════════════════
 
@@ -1825,7 +1825,7 @@ SAME TASK, MORE WORKERS — NAIVE EXPECTATION vs AMDAHL
 
 The ceiling table makes the arithmetic blunt:
 
-```
+```text
  CEILING OF THE SERIAL FRACTION (speedup at large N)
 ════════════════════════════════════════════════════════════════════════
  serial (1-p)   parallel p    N = 8     N = 64     N = ∞     half ceiling at
@@ -1880,7 +1880,7 @@ WHERE (1 - p) HIDES IN A 2026 SERVICE STACK
 
 Amdahl also keeps the serial fraction constant. Real systems do not. Coordination cost grows with N (chatty protocols, cache coherence, lock contention, garbage collection pauses). That extra term is the **Universal Scalability Law** (USL). It predicts something Amdahl never does: a peak, and then a fall.
 
-```
+```text
 AMDAHL FLATTENS — USL PEAKS AND FALLS
 ══════════════════════════════════════════════════════════════════════════
   speedup
@@ -1948,7 +1948,7 @@ SCALE-OUT PLAN vs WHAT THE LAW PAYS OUT
 
 The team does not buy 16 workers. The team fixes the serial section instead.
 
-```
+```text
 THE FIX — SHRINK (1-p), DO NOT ADD WORKERS
 ═══════════════════════════════════════════════════════════════════════════
    before   30 s serial    read the manifest per worker, commit row by row
@@ -1970,7 +1970,7 @@ The fix beats the extra fleet. Eight fixed workers finish in 27.3 s. Sixteen unf
 
 Tensor parallelism splits each layer of a model across GPUs. The forward pass scales well. The rest of the step does not.
 
-```
+```text
 TENSOR PARALLELISM — THE PART THAT DOES NOT SPLIT
 ═══════════════════════════════════════════════════════════════════════════
   TP = 4   [ matmul ████████████████ ]────────  all 4 GPUs busy
@@ -2005,7 +2005,7 @@ The algorithm is greedy. One rule controls the whole run: **always work on the u
 
 That rule needs one condition. All edge weights must be zero or positive. With a positive weight, no later path can reach a settled node with a smaller cost. The proof is short. Every remaining path travels through the frontier. The frontier holds costs that are already larger than the settled cost. Any addition makes them larger again. A negative weight breaks that argument, and the algorithm returns a wrong answer.
 
-```
+```text
 THE THREE REGIONS DURING A RUN
 ═══════════════════════════════════════════════════════════════════
   ┌─────────────────┐   relax an edge   ┌──────────────────┐
@@ -2051,7 +2051,7 @@ The greedy rule gives a second property. The pop order is already sorted by cost
 
 The naive alternative is BFS. BFS counts hops, not cost. On an unweighted graph the two ideas agree. On a weighted graph they disagree at the first cheap detour.
 
-```
+```text
 FEWEST HOPS (BFS)  vs  LOWEST COST (DIJKSTRA)
 ══════════════════════════════════════════════════════════════════════
  EDGES, weight in minutes
@@ -2073,7 +2073,7 @@ FEWEST HOPS (BFS)  vs  LOWEST COST (DIJKSTRA)
 
 The data structure changes the running time. Nothing else does.
 
-```
+```text
  TIME COMPLEXITY BY PRIORITY QUEUE
 ═════════════════════════════════════════════════════════════════════
  STRUCTURE          TIME                  BEST WHEN
@@ -2089,7 +2089,7 @@ The data structure changes the running time. Nothing else does.
 
 **The negative weight boundary.** One negative edge is enough to break the result.
 
-```
+```text
 WHY NEGATIVE WEIGHTS BREAK THE GREEDY RULE
 ═══════════════════════════════════════════════════════════════════
    edges:  S -> A = 2      S -> B = 5      B -> A = -4
@@ -2157,7 +2157,7 @@ Honest status in 2026: this is a theory result. Production code still runs Dijks
 
 A delivery platform routes one courier from warehouse `W` to customer `D`. Edge weights are travel minutes. The graph has one trap: the shortest hop route is not the fastest route.
 
-```
+```text
 THE INPUT GRAPH (minutes, directed)
 ═══════════════════════════════════════════════════════════════════════
         W ──4──▶ A ──5──▶ C ──3──▶ D
@@ -2190,7 +2190,7 @@ Two relaxations changed a value that was already in the heap. Step 2 found a che
 
 The engine reconstructs the path from the `prev` pointer of each node.
 
-```
+```text
 THE TWO ROUTES THE ENGINE COULD RETURN
 ═══════════════════════════════════════════════════════════════════════
  BFS route      W ─▶ A ─▶ C ─▶ D            3 hops     12 minutes
@@ -2221,7 +2221,7 @@ Anycast has no protocol of its own. It borrows BGP. The operator takes a prefix,
 
 RFC 4786 (BCP 126, published in 2006) names the parts. An anycast **node** is a group of hosts and routers that serve the address at one site. The **catchment** of a node is the region whose packets flow to that node.
 
-```
+```text
 UNICAST vs ANYCAST vs MULTICAST
 ═══════════════════════════════════════════════════════════════════════
 
@@ -2289,7 +2289,7 @@ One warning sits under the word **nearest**. BGP does not measure latency. It co
 
 A team runs a public DNS resolver on `198.51.100.53`. Three nodes announce this prefix. Each node runs its own BGP daemon.
 
-```
+```text
 THREE NODES ANNOUNCE THE SAME PREFIX
 ═══════════════════════════════════════════════════════════════════════
   NODE          AS        ANNOUNCEMENT        CATCHMENT
@@ -2304,7 +2304,7 @@ THREE NODES ANNOUNCE THE SAME PREFIX
 
 A user in Jakarta sends one query.
 
-```
+```text
 QUERY FROM JAKARTA — ROUTING DECIDES, NOT DNS
 ═══════════════════════════════════════════════════════════════════════
    laptop (Jakarta)
@@ -2328,7 +2328,7 @@ QUERY FROM JAKARTA — ROUTING DECIDES, NOT DNS
 
 Now the Singapore node fails.
 
-```
+```text
 FAILOVER WITHOUT A CLIENT CHANGE
 ═══════════════════════════════════════════════════════════════════════
    t = 0 s      the node fails its own health check
@@ -2388,7 +2388,7 @@ maximize   E[ r(x, y) ]  -  beta * KL( pi(y|x)  ||  pi_ref(y|x) )
 
 The method comes from Christiano et al. (2017). InstructGPT (Ouyang et al., 2022) is the standard worked example. It applied the three stages to GPT-3.
 
-```
+```text
 WITHOUT vs WITH RLHF
 ═══════════════════════════════════════════════════════════════════════
 

@@ -68,7 +68,7 @@ Tromboning is a network inefficiency where traffic takes an unnecessarily long, 
 Office Communication Problem
 Scenario: Two employees in the same building want to share a file
 
-```
+```text
 ❌ Tromboning (Inefficient):
 
 Alice (Floor 1)                    Bob (Floor 2)
@@ -133,7 +133,7 @@ Incremental Data Ingestion is a data loading strategy where only new, modified, 
 E-Commerce Orders Database
 Scenario: Daily sync of 10 million orders to data warehouse
 
-```
+```text
 FULL INGESTION:
 ┌─────────────┐         ┌─────────────┐
 │   SOURCE    │  ALL    │    DATA     │
@@ -216,7 +216,7 @@ Point of Presence (PoP) is a physical location where network infrastructure is d
 Video Streaming Service
 Scenario: Netflix serving users worldwide
 
-```
+```text
 With PoPs (Distributed):
 
 User in Tokyo                    Local PoP
@@ -276,7 +276,7 @@ Incremental Static Regeneration (ISR) is a web development strategy that allows 
 News Website with 10,000 Articles
 Scenario: News site needs fast pages but updated content
 
-```
+```text
 Incremental Static Regeneration (ISR):
 
 Article updated at 2:00 PM
@@ -319,7 +319,7 @@ Profile-First System is an architecture approach where user profiles serve as th
 Music Streaming Platform
 Scenario: Building a music streaming service
 
-```
+```text
 Profile-First System:
 
 Build Profile Foundation First:
@@ -400,7 +400,7 @@ TypedArrays are array-like objects in JavaScript that provide a mechanism for re
 TypedArray
 Scenario: Storing image pixel values (0-255)
 
-```
+```text
 // TypedArray - optimized for bytes (0-255)
 const pixels = new Uint8Array([255, 128, 64, 255, 0, 128, 200, 100]);
 
@@ -533,7 +533,7 @@ Cache Stampede (also called Thundering Herd or Dog-pile Effect) is a phenomenon 
 Popular Product Page
 Scenario: E-commerce site with cached product data
 
-```
+```text
 Proper Cache Handling (The Solution):
 
 Cache Status: Product #123 data EXPIRED at 10:00:00
@@ -622,7 +622,7 @@ Principle of Least Privilege (PoLP) is a security concept where users, applicati
 Company Employee Access
 Scenario: Different employees need different system access
 
-```
+```text
 With PoLP (Minimum Required Access):
 
 ┌─────────────────────────────────────────────────────┐
@@ -673,7 +673,7 @@ Commercial ERP (Enterprise Resource Planning) is a pre-built, vendor-developed s
 Manufacturing Company Operations
 Scenario: Furniture company managing daily operations
 
-```
+```text
 With Commercial ERP (Unified System):
 
 ┌─────────────────────────────────────────────────────┐
@@ -773,7 +773,7 @@ Secure Software Development Lifecycle (SSDLC) is a framework that integrates sec
 Building a Banking Application
 Scenario: Developing a mobile banking app
 
-```
+```text
 SSDLC (Security at Every Phase):
 
 ┌─────────────────────────────────────────────────────┐
@@ -971,7 +971,7 @@ Jaro-Winkler Distance is a string similarity metric that measures how similar tw
 Comparing Names
 Scenario: Matching customer names with typos
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │           JARO-WINKLER SIMILARITY                   │
 ├─────────────────────────────────────────────────────┤
@@ -1024,7 +1024,7 @@ The Polling Paradox is the counterintuitive problem where traditional polling ap
 Chat Application Checking for New Messages
 Scenario: User waiting for new messages in a chat app
 
-```
+```text
 The Paradox Illustrated:
 
 ┌─────────────────────────────────────────────────────┐
@@ -1106,7 +1106,7 @@ Manacher's Algorithm is a clever technique for finding the longest palindromic s
 Finding Longest Palindrome
 Scenario: Find the longest palindromic substring
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │        PALINDROME FINDING COMPARISON                │
 ├─────────────────────────────────────────────────────┤
@@ -1338,7 +1338,7 @@ Key feature: Interactive text-based navigation using keyboard, not mouse clicks 
 
 Textual User Interface (TUI) - Organized visual layout:
 
-```
+```text
 ┌─────────── File Manager ───────────┐
 │ ┌─ Folders ─┐  ┌─── Files ───────┐│
 │ │ Documents │  │ → report.pdf    ││
@@ -1590,7 +1590,7 @@ Binary Sovereignty is the principle of maintaining complete control and ownershi
 Company Infrastructure Security
 Scenario: A financial company needs secure, auditable software
 
-```
+```text
 With Binary Sovereignty (Secure):
 
 ┌─────────────────────────────────────────────────────┐
@@ -1650,7 +1650,7 @@ Data Skew occurs when data is distributed unevenly across partitions or nodes in
 
 Imagine processing customer orders across 4 servers:
 
-```
+```text
 ❌ With Data Skew
 
 Server 1: ████████████████████████ (80,000 orders) ← Overloaded!

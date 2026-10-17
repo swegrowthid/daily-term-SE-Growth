@@ -62,7 +62,7 @@ Chubby is a distributed lock service developed by Google that provides coarse-gr
 
 Web service with multiple servers needs to elect a leader for background tasks
 
-```
+```text
 Initial state:
 ┌─────────────────────────────────┐
 │         Chubby Cell             │
@@ -2013,7 +2013,7 @@ Problem: Website loading is slow due to multiple round trips and connection setu
 
 Traditional HTTP/2 over TCP+TLS (slow):
 
-```
+```text
 Client ────────────────────────── Server
    │                                │
    │ TCP SYN                        │
@@ -2040,7 +2040,7 @@ Total: 5 round trips before data transfer
 
 HTTP/3 over QUIC (fast):
 
-```
+```text
 Client ────────────────────────── Server
    │                                │
    │ QUIC Initial (ClientHello +    │

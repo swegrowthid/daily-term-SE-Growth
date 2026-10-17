@@ -300,6 +300,7 @@ What Causes Bit Flips?
 
 **Visual — What a Bit Flip Looks Like**
 
+```text
 Original data in memory:
 ┌───┬───┬───┬───┬───┬───┬───┬───┐
 │ 0 │ 1 │ 1 │ 0 │ 1 │ 1 │ 0 │ 1 │ = 109 decimal = ASCII letter 'm'
@@ -311,6 +312,7 @@ Original data in memory:
 ┌───┬───┬───┬───┬───┬───┬───┬───┐
 │ 0 │ 1 │ 1 │ 0 │ 1 │ 0 │ 0 │ 1 │ = 105 decimal = ASCII letter 'i'
 └───┴───┴───┴───┴───┴───┴───┴───┘
+```
 
 'm' silently became 'i' — with no error thrown ❌
 
@@ -436,7 +438,7 @@ Key Concepts First
 
 Building the MST step by step
 
-```
+```text
 Step 1 — Add C─E (weight 1)        Step 2 — Add A─C (weight 2)
     A       B                           A       B
             │                           │
@@ -481,6 +483,7 @@ SLA = the contract with customers: "if your cab takes more than 15 minutes, you 
 
 Visual Relationship
 
+```text
      What you          What you           What you
       MEASURE            TARGET             PROMISE
         │                  │                  │
@@ -490,6 +493,7 @@ Visual Relationship
 │ SLI │───▶│ SLO │───▶│ SLA │
 │ (metric) │ │ (goal) │ │ (contract) │
 └─────────────┘ └─────────────┘ └─────────────┘
+```
 "Our uptime "We aim for "We guarantee
 is 99.97%" 99.9% up" 99.5% or
 refund"
@@ -922,7 +926,7 @@ mqweb solves this:
 E-Commerce Order System
 Imagine an e-commerce platform using IBM MQ to process orders, and using mqweb to integrate modern microservices with the MQ backbone.
 
-```
+```text
 Admin opens browser:
   https://mq-server:9443/ibmmq/console
 
@@ -1487,6 +1491,7 @@ DevEx is not about ping-pong tables or free snacks — it is the scientific fram
 
 The Three Core Dimensions
 
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    DevEx Framework                          │
 │                                                             │
@@ -1502,6 +1507,7 @@ The Three Core Dimensions
 │              Measured across three lenses:                  │
 │      Perceptions │ Workflows/Behaviors │ KPIs/Systems       │
 └─────────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 Engineering Team Applying the DevEx Framework
@@ -1911,6 +1917,7 @@ WebTransport = Modern smartphone app (reliable when needed, fast when wanted, ea
 Why WebTransport Exists
 The Problem with Current Technologies
 
+```text
 ┌────────────────────────────────────────────────────┐
 │  Traditional Web Real-Time Communication          │
 └────────────────────────────────────────────────────┘
@@ -1988,12 +1995,14 @@ Example Solution:
   Lost video frame? → Skip it, send next frame
   Text message? → Always delivered in order
   → No interference between streams! ✅
+```
 
 ### Example:
 
 Real-Time Racing Game
 Game Requirements
 
+```text
 "TurboRace" - Browser-based racing game
 ├─ 60 FPS gameplay
 ├─ Player positions updated 20 times/second
@@ -2001,7 +2010,6 @@ Game Requirements
 ├─ Game state sync (reliable)
 └─ Player inputs (can drop old inputs)
 
-```
 Performance Comparison
 
 Test: 100 players, 20 position updates/second
@@ -2058,7 +2066,7 @@ Infrastructure for Agency is a concept coined by Matthew Skelton and Manuel Pais
 E-Commerce Company Adopting AI Agents
 A retail company deploys AI agents across their engineering organization. Two approaches — one without Infrastructure for Agency, one with.
 
-```
+```text
 Company applies Team Topologies as Infrastructure for Agency:
 
 Step 1: Define bounded stream-aligned teams (human + AI):
