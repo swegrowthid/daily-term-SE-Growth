@@ -10,6 +10,7 @@ It rests on a simple observation from 1970s database theory: a system does two v
 
 A quick word on the name: "Responsibility Segregation" just means "give each responsibility its own class/module/component" — it's the same idea as Separation of Concerns applied to reads vs. writes.
 
+```text
 TRADITIONAL (single model) vs CQRS (split models):
 ═══════════════════════════════════════════════════════════════
 
@@ -53,8 +54,10 @@ TRADITIONAL (single model) vs CQRS (split models):
   │  shapes, so give them DIFFERENT models instead of one       │
   │  bloated compromise.                                        │
   └────────────────────────────────────────────────────────────┘
+```
 
 When to use it (it is NOT for every app):
+```text
   ┌────────────────────────────────────────────────────────────┐
   │  GOOD FIT (use CQRS):                                      │
   │  • Read-heavy systems: 10×–1000× more reads than writes    │
@@ -69,6 +72,7 @@ When to use it (it is NOT for every app):
   │  • No read/write asymmetry → CQRS adds complexity          │
   │  • You need strong, immediate read-your-writes consistency │
   └────────────────────────────────────────────────────────────┘
+```
 
 CQRS is often (but not always) paired with **Event Sourcing** — commands produce events that are replayed to build the read model. They are separate patterns that complement each other; CQRS can exist without Event Sourcing.
 
@@ -76,7 +80,7 @@ CQRS is often (but not always) paired with **Event Sourcing** — commands produ
 
 A ticketing platform where 99% of traffic is people *viewing* event seats (reads) and only a tiny fraction is actually *booking* (writes).
 
-```
+```text
 WITHOUT CQRS — every page-view and every booking hit ONE table
 ═══════════════════════════════════════════════════════════════
 
@@ -144,6 +148,7 @@ For most of AI's recent history there was only ONE dial to turn. To make a model
 
 Reasoning models (o1-class and successors, which became mainstream through 2025–2026) opened a SECOND dial. Instead of answering in one shot, they generate an internal "chain of thought" — they pause, explore, backtrack, and verify — and the **length and thoroughness of that hidden thinking** is itself a knob you can turn per-request. That extra per-query reasoning is exactly what "test-time compute" means. The same model, given more compute budget at runtime, produces a measurably better answer. Quality now scales with *thinking time*, not just with parameters.
 
+```text
 CLASSICAL (training-time only) vs REASONING (test-time scaling):
 ═══════════════════════════════════════════════════════════════
 
@@ -194,6 +199,7 @@ CLASSICAL (training-time only) vs REASONING (test-time scaling):
   │  orthogonal scaling axes — training compute and            │
   │  test-time compute.                                        │
   └────────────────────────────────────────────────────────────┘
+```
 
 The dial is tunable at several levels: per deployment (a "deep reasoning" vs a "fast" model endpoint), per request (an API flag asking for more effort), or algorithmically via methods such as best-of-N sampling, majority voting (self-consistency), or letting the model search/verify before committing to an answer. The economics matter: total inference cost for hard tasks can rise sharply because a reasoning model spends many tokens thinking — so systems must decide WHEN high test-time compute is worth it.
 
@@ -201,7 +207,7 @@ The dial is tunable at several levels: per deployment (a "deep reasoning" vs a "
 
 A math tutoring app (fitting — exactly the kind of thing you'd build) where the SAME model must handle two very different requests: "what is 7×8?" (instant) vs a hard word problem that trips up one-shot answers.
 
-```
+```text
 THE SAME MODEL, ONE REQUEST, A PER-REQUEST THINKING BUDGET
 ═══════════════════════════════════════════════════════════════
 
@@ -260,7 +266,7 @@ That also tells you the three triggers — every cold start is one of these:
 
 COLD vs WARM — what actually happens on each path:
 
-```
+```text
 COLD START vs WARM START
 ════════════════════════════════════════════════════════════
 
@@ -326,7 +332,7 @@ The whole discipline boils down to one question: **is a human waiting on this ca
 
 A ticketing platform ("TiketKilat") runs a flash sale at 15:00 sharp. The checkout function is serverless, pay-per-use — and had zero traffic for the 30 minutes before the sale, so the platform reclaimed every idle environment.
 
-```
+```text
 FLASH SALE — ONE ENDPOINT, THREE MOMENTS
 ════════════════════════════════════════════════════════════
 
@@ -362,7 +368,7 @@ The fix is a direct application of the ladder. TiketKilat *knows* the sale is at
 - **Slim the bundle**: the checkout function was importing a whole SDK for one call — tree-shaken down from 41 MB to 6 MB, shaving hundreds of ms off the unavoidable cold starts.
 - **Move the non-blocking work off the hot path**: the confirmation email is pushed to a queue and processed by a separate function where a 1-second cold start is invisible — nobody is staring at it.
 
-```
+```text
 WITH THE FIX — same flash sale, same spike:
 ═══════════════════════════════════════════
   14:59:30  provisioned envs spin up (N = 30) ── paid, ready
@@ -392,7 +398,7 @@ In the classic unstructured model, a task's lifetime is best described as "whoev
 
 UNSTRUCTURED vs STRUCTURED — what happens to the children:
 
-```
+```text
 UNSTRUCTURED CONCURRENCY            STRUCTURED CONCURRENCY
 (fire-and-forget)                   (scoped fork-join)
 ══════════════════════════          ══════════════════════════
@@ -464,7 +470,7 @@ return 200                          // "OK" is now a TRUE statement:
                                     // all three really completed
 ```
 
-```
+```text
 WITH ERRGROUP — the scope cannot exit until every child is joined:
 
  scope ──► ┌────────────────────────────────────────────────┐
@@ -498,6 +504,7 @@ The trick comes from an observation about fine-tuning: when you adapt a huge pre
 
 The forward pass becomes: **h = W₀x + (α/r)·BAx** — the frozen path carries all the pre-trained knowledge, and the small learned branch adds a task-specific correction. After training, the correction can be *merged* back into W (W′ = W₀ + (α/r)·BA), leaving a single normal model with zero extra inference cost.
 
+```text
 FULL FINE-TUNING vs LoRA:
 ═══════════════════════════════════════════════════════════════
 
@@ -543,6 +550,7 @@ FULL FINE-TUNING vs LoRA:
   │  what it needs. LoRA learns only the small, low-rank       │
   │  "delta" that points that knowledge at your task.          │
   └────────────────────────────────────────────────────────────┘
+```
 
 Key mechanics worth knowing:
 
@@ -559,7 +567,7 @@ RumahKode, a small studio, runs a customer-support copilot on a 7B open model fo
 
 Option A (full fine-tuning) is a non-starter: a 7B model needs ~110–140 GB of VRAM just for weights + gradients + optimizer — 6× their whole GPU. Option B is to fine-tune with LoRA (they use Hugging Face PEFT; with r=16, α=32 on the attention + MLP projections, ~0.2% of parameters train).
 
-```
+```text
 THE PIPELINE — one frozen base, a small learnable detour
 ═══════════════════════════════════════════════════════════════
 
@@ -594,7 +602,7 @@ After training, the copilot holds the refund policy and the right tone — witho
 
 The merge step is optional and that's where LoRA gets *really* interesting. Their second product is a fasting-app companion bot that needs three very different voices: a strict medical-accuracy mode, a relaxed "gym bro" motivator mode, and a Bahasa-Jawa-lite casual mode. Instead of three full fine-tunes (three × 14GB+ models), they train **three 26 MB LoRA adapters on the same frozen base** and load the right one per request — or even per user:
 
-```
+```text
 MULTI-LORA SERVING — one base model, three specialist skills
 ═══════════════════════════════════════════════════════════════
 
@@ -632,6 +640,7 @@ It exists because of a brutal asymmetry in networks: **a lost response does not 
 
 The name comes from algebra: an operation is *idempotent* when doing it twice equals doing it once (`f(f(x)) = f(x)`). The pattern does not literally make the operation run once — it makes the **system converge on one visible result**, no matter how many times the request arrives. That distinction ("deterministic convergence", not "exactly-once") is the whole game in distributed systems.
 
+```text
 NON-IDEMPOTENT POST — same request sent twice = side effect twice:
 ════════════════════════════════════════════════════════════════════
 
@@ -684,6 +693,7 @@ IDEMPOTENT POST — same key = same logical operation:
   │  KEY IDEA: the server remembers the OUTCOME of a key, so a       │
   │  retry with that key is answered from memory, never re-executed. │
   └──────────────────────────────────────────────────────────────────┘
+```
 
 How it works in practice:
 
@@ -722,7 +732,7 @@ THE CRASH WINDOW — the store alone is not enough
 
 Kyomel's fasting-bot launches a paid "Pro" tier. Users pay through a checkout API, and the payment service is written in Go behind a load balancer. It is 11 PM, and a user on a flaky mobile connection taps "Upgrade to Pro" on a slow bus — the request reaches the server, the charge commits, but the response dies somewhere in the tunnel before coming back. The phone retries.
 
-```
+```text
 RETRY-SAFE CHECKOUT — idempotency middleware + DB backstop
 ═══════════════════════════════════════════════════════════
 
@@ -794,10 +804,10 @@ The pattern exists because of the **dual-write problem**. In any event-driven sy
 
 The outbox closes both windows with one trick: the event stops being a side effect and becomes **data**. You move the publish outside the transaction and outside the request path entirely, and the message broker becomes just one more *consumer of your database*.
 
+```text
 NAIVE DUAL-WRITE vs OUTBOX — where atomicity lives:
 ════════════════════════════════════════════════════════════════════════
 
-```
 NAIVE — two writes, two systems, NO shared atomicity:
 
   handler
@@ -836,17 +846,17 @@ OUTBOX — the event is a ROW, committed atomically with the change:
                   └───────┬───────┘
                           │ ④ consumers MUST be idempotent
                           ▼    (duplicates are expected, not bugs)
-```
 
   ┌────────────────────────────────────────────────────────────────┐
   │  KEY IDEA: you never "send" an event in the request path —     │
   │  you SAVE it. Delivery becomes a separate, retryable job       │
   │  owned by a relay, fully decoupled from the business write.    │
   └────────────────────────────────────────────────────────────────┘
+```
 
 How the relay works — two flavors, same job (read new rows → publish → mark dispatched):
 
-```
+```text
 POLLING PUBLISHER                          TRANSACTION LOG TAILING (CDC)
 ─────────────────────                      ─────────────────────────────
   app process, your code                    Debezium / CDC connector
@@ -885,7 +895,7 @@ When you should *not* reach for it: purely synchronous request/response with no 
 
 "KopiKode" — an online coffee-subscription shop — splits checkout into services. The `orders` service is the source of truth for orders. When a customer checks out, three other services must learn about it: `billing` (charge), `inventory` (reserve beans), and `notifications` (send "order received" email). The first version did the naive dual-write — and production found both failure modes within a week:
 
-```
+```text
 NAIVE VERSION — the week from hell:
 
   checkout handler
@@ -904,7 +914,7 @@ NAIVE VERSION — the week from hell:
 
 They rebuilt it with an outbox. The checkout handler now does exactly ONE transactional write; a polling relay (their Go service, `SELECT … FOR UPDATE SKIP LOCKED`, every 100 ms) does the publishing; and consumers dedupe on `event_id`:
 
-```
+```text
 WITH THE OUTBOX — order → event → three consumers, no lost or phantom events:
 
   CUSTOMER taps "Checkout"
@@ -1001,10 +1011,10 @@ Confidential computing moves that assumption down into the silicon. Instead of t
 
 Neither half works alone. Isolation without attestation is unverifiable (you cannot tell a genuine TEE from a simulator, or from a legitimate TEE running the attacker's image). Attestation without isolation is a notarized promise that nobody enforces. Together they are the product: **"prove what is running, then hand it secrets that even its own host cannot read."**
 
+```text
 WITHOUT CONFIDENTIAL COMPUTING — a standard VM: the host reads everything
 ════════════════════════════════════════════════════════════════════════════
 
-```
                     ┌─────────────────────────────────────────────┐
    patient data ───►│  CLOUD PROVIDER'S PHYSICAL MACHINE          │
    model weights    │                                             │
@@ -1025,12 +1035,10 @@ WITHOUT CONFIDENTIAL COMPUTING — a standard VM: the host reads everything
    Disk encryption and TLS BOTH END HERE — at the doorstep of the
    machine. The instant the CPU needs the bytes to compute on them,
    they are plaintext, and the operator owns the plaintext.
-```
 
 WITH CONFIDENTIAL COMPUTING — a Confidential VM (CVM) + GPU TEE
 ════════════════════════════════════════════════════════════════════════════
 
-```
                     ┌─────────────────────────────────────────────┐
    patient data ───►│  CLOUD PROVIDER'S PHYSICAL MACHINE          │
    model weights    │  (operator: untrusted, and now irrelevant)  │
@@ -1071,7 +1079,7 @@ The four pillars (as the Confidential Computing Consortium frames them) are a ch
 
 The 2026 hardware landscape, and why "the TEE" is usually several TEEs stitched together:
 
-```
+```text
 PROTECTING A FULL AI INFERENCE STACK — isolation at both ends of the bus
 ════════════════════════════════════════════════════════════════════════
 
@@ -1109,7 +1117,7 @@ What changed by 2026 — this is the reason the term moved from "compliance chec
 
 Where it fits — and where it does not:
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────────┐
 │  GOOD FIT (a TEE is doing real work)                                 │
 │  • Regulated data you cannot show the host: health, finance, gov     │
@@ -1176,7 +1184,7 @@ The pragmatic reading: **FHE is the stronger security claim, TEEs are the only o
 
 "KlinikSehat", a Jakarta health-tech, wants to launch an LLM triage assistant that reads patient records. Its constraints are brutal but normal: the hospital contracts forbid the cloud provider from ever accessing patient data; Indonesian personal-data law requires demonstrable technical controls; and the model is a fine-tuned, million-dollar asset that must not leak to the provider either. They refuse to build a datacenter. So they deploy a **confidential inference stack** — and the shape of the system changes from an architecture diagram into a *handshake*.
 
-```
+```text
 CONFIDENTIAL INFERENCE, END TO END — nothing readable until attestation passes
 ══════════════════════════════════════════════════════════════════════════════
 
@@ -1245,7 +1253,7 @@ Two design decisions carry most of the weight here, and both are easy to get wro
 
 **The verifier is not the cloud.** If KlinikSehat accepts the provider's own attestation service verdict, it has merely moved the trust, not removed it — the operator can lie about a quote it validates itself. The IETF RATS framework (RFC 9334) names the roles precisely: the **Attester** (the TEE) produces **Evidence**; the **Verifier** checks it against **Reference Values**; the **Relying Party** (KlinikSehat's KMS) decides whether to release the key. Two standard topologies fall out:
 
-```
+```text
 BACKGROUND CHECK MODEL — every relying party verifies independently
 ────────────────────────────────────────────────────────────────────
 
@@ -1309,7 +1317,7 @@ CONSEQUENCE: decoding 1 sequence alone wastes ~95% of an H100.
 
 The fix is to change the **unit of scheduling** from a request to a **decode iteration**. This was formalized by the **Orca** paper (OSDI 2022), which named it iteration-level scheduling; **vLLM** (2023) made it runnable at scale by pairing it with **PagedAttention** — a paged KV cache where each sequence holds a list of fixed-size blocks instead of one contiguous reservation. That pairing is not optional, it is co-designed: dynamic admission/eviction means sequence memory is constantly being allocated and returned, and with naive contiguous allocation you get fragmentation plus up-to-60% memory waste, which in turn caps how many sequences you can keep in the batch. Continuous batching is the *scheduling* innovation; PagedAttention is the *memory* innovation that makes it possible.
 
-```
+```text
 STATIC BATCHING — the batch is FROZEN until the slowest member finishes
 ═══════════════════════════════════════════════════════════════════════════
 slot │                     decode iterations →
@@ -1343,7 +1351,7 @@ slot │  it0     it30      it31          it300      it301       it1500
 
 The mechanism, spelled out, is a three-step loop the engine runs forever:
 
-```
+```text
 EVERY DECODE ITERATION — the scheduler executes this, endlessly
 ┌──────────────────────────────────────────────────────────────────────┐
 │                                                                      │
@@ -1400,7 +1408,7 @@ Finally, one clarification that saves a lot of confusion: continuous batching is
 
 TokoKita runs a customer-support RAG bot ("KirimChat") on **one H100** with vLLM, serving ~40 req/s at peak. The prompt is a RAG context (~3,000 tokens) plus history, and answer lengths are wildly mixed: 60% are 20–60 token "status pesanan saya?" replies, 30% are 200–500 token explanations, and 10% are 1,500+ token policy walkthroughs. Their first version used a hand-rolled loop with static batches of 8. The Flash Sale at 20:00 WIB is where it fell over.
 
-```
+```text
 STATIC BATCH OF 8 — 20:03 WIB, measured on the same H100
 ════════════════════════════════════════════════════════════════════════
   R1 (policy walkthrough, 1,600 tok)  ████████████████████████████ ...
@@ -1417,7 +1425,7 @@ Two things made it structurally bad: the 7 short users waited ~11 s for a one-li
 
 The fix was a config change, not a rewrite: keep vLLM's default continuous batching, then tune it.
 
-```
+```text
 CONTINUOUS BATCHING + CHUNKED PREFILL — 20:03 WIB, same single H100
 ════════════════════════════════════════════════════════════════════════
  iteration │ running batch (max_num_seqs=192)
@@ -1433,7 +1441,7 @@ CONTINUOUS BATCHING + CHUNKED PREFILL — 20:03 WIB, same single H100
   Cost: $0.51 / 1M output tokens      ·  queue drained within 90 s
 ```
 
-```
+```text
 vLLM flags actually used
 ┌────────────────────────────────────────────────────────────────────┐
 │ --max-model-len 32768          keep the context they trained for   │
@@ -1469,6 +1477,7 @@ The failure modes cells exist for are the ones redundancy does *not* fix. "A mac
 
 In a single shared pool all of these are fleet-wide events. AWS's Well-Architected guidance frames the design question better than any paraphrase: *"Is it better for 100% of customers to experience a 5% failure rate, or 5% of customers to experience a 100% failure rate?"* Cell-based architecture answers **the second, on purpose** — it trades a small, *bounded*, *known* group of users being fully degraded for the guarantee that nobody else notices. That bounded number is called the **blast radius**, and shrinking it is the entire point.
 
+```text
 SINGLE SHARED STACK vs CELL-BASED — where the blast radius is measured:
 ═══════════════════════════════════════════════════════════════════════
 
@@ -1536,6 +1545,7 @@ SINGLE SHARED STACK vs CELL-BASED — where the blast radius is measured:
   │  Cells are not "more servers"; they are a smaller number of   │
   │  users who can be sacrificed to keep the rest correct.        │
   └────────────────────────────────────────────────────────────────┘
+```
 
 **The three components.** Every cell-based system decomposes into exactly these, and getting the boundaries between them right is the whole design:
 
@@ -1543,7 +1553,7 @@ SINGLE SHARED STACK vs CELL-BASED — where the blast radius is measured:
 2. **The cell router** — the hardest component, because it is the *one thing that cannot be cellularized*. It is the only element holding shared state about all cells, so it must be brutally thin, stateless, deterministic, and unavailable-free: ideally a hash of the partition key against a mapping that is cached in-process and replicated (S3/CDN/Route 53/API-Gateway routing rules/edge worker), **never a call to a live control plane on the request path**. Two rules matter more than any implementation detail: the mapping must be **deterministic** (same tenant → same cell, always; hash the *tenant*, never the *request*, or you lose data locality and cache hits and start splitting a tenant's writes across cells), and the router must be **statically stable** — it must keep serving correctly with the control plane completely down.
 3. **The control plane** — everything that *manages* the fleet rather than serving traffic: provisioning cells, maintaining the tenant→cell mapping, deploying code, migrating tenants between cells, running migrations. It is deliberately **off the request path**. Cells move the deployment problem from "shipping to production" to "shipping to N productions", which is exactly why the control plane has to be fully automated: if creating cell 51 involves a manual step, you do not have a cell-based architecture, you have N snowflakes.
 
-```
+```text
 CONTROL PLANE vs DATA PLANE — static stability is the requirement
 ═══════════════════════════════════════════════════════════════════
 
@@ -1603,7 +1613,7 @@ Kyomel's **fasting-bot** outgrew the friend group. What started as one WhatsApp 
 
 Then **KomunitasGymBesar** joined. One workspace, 40,000 members, and a leaderboard feature that runs `SELECT member, COUNT(*) FROM fasting_logs ... GROUP BY member ORDER BY count DESC LIMIT 100` plus an "export my streak" CSV for every member. At **04:12 WIB** it saturated the shared connection pool, and 12,000 *unrelated* communities learned about it instantly.
 
-```
+```text
 BEFORE — 04:12 WIB, ONE POISON PILL, EVERY COMMUNITY HIT
 ═══════════════════════════════════════════════════════════════════
 
@@ -1641,7 +1651,7 @@ BEFORE — 04:12 WIB, ONE POISON PILL, EVERY COMMUNITY HIT
 
 They rebuilt it as a **cell-based architecture** — but with the same 12 app hosts they already ran. The stack was regrouped into **8 cells**, each cell being 1–2 app hosts plus its own small Postgres, its own Redis, and its own worker pool, with a stateless **cell router** at the WhatsApp gateway assigning every workspace deterministically via `hash(workspace_id) % 8`.
 
-```
+```text
 AFTER — same poison pill, same bad deploy: 1/8 of the fleet
 ═══════════════════════════════════════════════════════════════════
 
@@ -1747,7 +1757,7 @@ So the design problem is: **how do I stop paying the cost of waiting, when I alr
 
 The comparative picture:
 
-```
+```text
 WITHOUT A CIRCUIT BREAKER  vs  WITH A CIRCUIT BREAKER
 (retry + timeout only)         (retry + timeout + breaker)
 ═══════════════════════════    ═══════════════════════════════════
@@ -1778,7 +1788,7 @@ WITHOUT A CIRCUIT BREAKER  vs  WITH A CIRCUIT BREAKER
 
 The state machine is the core of the pattern, and it has three normal states — plus, importantly, **edges that are deliberately missing**:
 
-```
+```text
 CLOSED  ──failure rate ≥ threshold──►  OPEN
 OPEN    ──waitDurationInOpenState──►   HALF_OPEN
 HALF_OPEN ──probes succeed──► CLOSED
@@ -1848,7 +1858,7 @@ There is a deeper version of that trap, and it is the one that should make you c
 
 So the honest pro/con ledger:
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │  ✅ WHAT YOU GET                                               │
 │  • Converts "wait 10 s, then fail" into "fail in 0 ms"         │
@@ -1943,7 +1953,7 @@ breaker "exercise-catalog":
                    payment breaker)
 ```
 
-```
+```text
 WITH THE BREAKER — the same vendor outage, six minutes later
 ════════════════════════════════════════════════════════════════════
 
@@ -2032,7 +2042,7 @@ The cache lives at the application layer or at the AI gateway layer. The gateway
 
 Semantic caching is not the only cache in a modern LLM stack, and the three layers answer different questions. Provider **prompt caching** keys on a byte-identical prompt prefix (usually the system prompt). It reduces prefill compute and the model still generates a fresh answer, so it carries no correctness risk. **Exact-match caching** keys on the full prompt text and reuses the whole answer. **Semantic caching** keys on meaning and reuses the whole answer.
 
-```
+```text
 EXACT-MATCH + PROMPT CACHING  vs  SEMANTIC CACHING — what actually gets reused
 ═════════════════════════════════════════════════════════════════════════════
 
@@ -2131,7 +2141,7 @@ The first version called the model for every question. p50 latency was 900 ms pe
 
 The second version added a semantic cache at the gateway: one embedding call per question (about **8 ms**, **$0.00002**), one HNSW index, threshold **0.86** on cosine similarity, TTL 24 hours.
 
-```
+```text
 THE REQUEST PATH AFTER THE CACHE — and the numbers it produced
 ═══════════════════════════════════════════════════════════════════════
 
@@ -2198,7 +2208,7 @@ The rule does not remove a copy. It moves the copy in time. A clone becomes chea
 - **Eager copy** pays once, up front: O(memory). The clone waits for a full duplicate of RAM.
 - **Copy-on-Write** pays O(metadata) at clone time, then O(pages written) over the lifetime.
 
-```
+```text
 EAGER COPY  vs  COPY-ON-WRITE — one 400 MB parent, one clone
 ══════════════════════════════════════════════════════════════════════
 
@@ -2237,7 +2247,7 @@ COPY-ON-WRITE — the clone starts at once, the pages stay shared
 
 Every first write runs the same four steps in the kernel:
 
-```
+```text
 ONE COPY-ON-WRITE FAULT — what a single first write costs
 ═══════════════════════════════════════════════════════════════════════
 
@@ -2266,7 +2276,7 @@ COW is not a fork feature. It is a general sharing rule, and it carries these sy
 
 The unit of the copy is the page. That one fact controls the size of the bill.
 
-```
+```text
 PAGE SIZE IS THE UNIT OF THE COPY — the setting that decides how big the bill gets
 ═════════════════════════════════════════════════════════════════════════════════
 
@@ -2301,7 +2311,7 @@ Kyomel's **fasting-bot** runs on one VPS with **1 vCPU and 1 GB RAM**. A small R
 
 The numbers below are the shape of this failure class, not a measurement of that box. The commands at the end let Kyomel check his own instance.
 
-```
+```text
 THE SAVE THAT KILLS THE BOX — one snapshot, one fork, one OOM
 ═══════════════════════════════════════════════════════════════════════
 
@@ -2391,7 +2401,7 @@ The reason CRDTs work is algebra, not consensus. The merge function must obey th
 
 These three laws define a **join-semilattice**. That is the whole trick. The network may drop, duplicate, delay, or reorder messages. The state still converges. No lock, no leader, no two-phase commit, no quorum.
 
-```
+```text
 NAIVE REPLICATION  vs  CRDT — two replicas edit the same data, no coordinator
 ════════════════════════════════════════════════════════════════════════════════
 
@@ -2549,7 +2559,7 @@ A FASTING BOT WITHOUT CRDT — one replay, one late message, two wrong numbers
 
 The same two behaviours against a CRDT-backed log:
 
-```
+```text
 THE SAME TWO EVENTS WITH A CRDT — replay and late arrival are absorbed
 ══════════════════════════════════════════════════════════════════════════════
 
@@ -2645,7 +2655,7 @@ A naive attention kernel walks the N x N matrix through HBM several times: write
 
 FlashAttention removes the matrix instead of compressing it:
 
-```
+```text
 NAIVE ATTENTION (materialize)  vs  FLASHATTENTION (tile + fuse)
 ═══════════════════════════════════════════════════════════════════════
 
@@ -2707,7 +2717,7 @@ Adoption is the reason this term is worth knowing: the flash kernel is the defau
 
 A coding agent sends one request with a 120,000-token repository context to a single 80 GB GPU. This is a prefill-heavy request: the model must run attention over all 120,000 tokens at once. Compare the two paths.
 
-```
+```text
 ONE 120K-TOKEN PREFILL REQUEST — WHERE THE MEMORY GOES
 ═══════════════════════════════════════════════════════════════════════
 
@@ -2735,7 +2745,7 @@ ONE 120K-TOKEN PREFILL REQUEST — WHERE THE MEMORY GOES
 
 The execution path, block by block:
 
-```
+```text
 PREFILL PATH — 120K tokens, one Q block at a time
 ═══════════════════════════════════════════════════════════════════════
 
@@ -2800,7 +2810,7 @@ The need comes from simple arithmetic. Producers almost always run faster than c
 
 Backpressure adds one rule: the buffer has a ceiling, and the producer feels that ceiling.
 
-```
+```text
 WITHOUT BACKPRESSURE (no ceiling)      WITH BACKPRESSURE (bounded gate)
 ═════════════════════════════════      ═══════════════════════════════════
 
@@ -2907,7 +2917,7 @@ Monday 09:00. The fan-out sends 12,000 requests per second to the gateway. The G
 
 The queue degrades much faster than the GPU fleet grows. Queue growth wins the race.
 
-```
+```text
 THE RACE — 09:00 SPIKE, NO BACKPRESSURE
 ═══════════════════════════════════════════════════════════════════════
 
@@ -2937,7 +2947,7 @@ THE RACE — 09:00 SPIKE, NO BACKPRESSURE
 
 The fix uses four layers. Each layer answers a failure the layer below cannot.
 
-```
+```text
 CONTROL LOOP THAT HOLDS — SLO + BACKPRESSURE + SHEDDING + AUTOSCALING
 ═══════════════════════════════════════════════════════════════════════
 
@@ -3063,7 +3073,7 @@ The problem it fixes is the price of a system call. A blocking `read()` must ent
 
 io_uring changes the direction of the control path. The kernel no longer receives one request per system call. The kernel takes requests from memory.
 
-```
+```text
 ONE SYSCALL PER OPERATION              SHARED RINGS (io_uring)
 ═══════════════════════════════        ════════════════════════════════
 
@@ -3102,7 +3112,7 @@ Both rings live in memory that the application maps with `io_uring_setup()` and 
 
 Every request is a **submission queue entry (SQE)** of 64 bytes. Every result is a **completion queue entry (CQE)** of 16 bytes. An SQE holds the opcode, the file descriptor, the offset, the buffer, the flags, and a `user_data` field. The kernel copies that same `user_data` into the CQE. That field is how the application knows which request finished. A build can opt into 128-byte SQEs and 32-byte CQEs.
 
-```
+```text
 ANATOMY OF THE SHARED MEMORY
 ═══════════════════════════════════════════════════════════════════
 
@@ -3232,7 +3242,7 @@ A platform team runs PostgreSQL 18 on Kubernetes. The storage is network-attache
 
 PostgreSQL 17 issued one blocking read at a time from the backend. PostgreSQL 18 (GA, 25 September 2025) added an asynchronous I/O subsystem for reads. The `io_method` setting selects the path, and it needs a server restart.
 
-```
+```text
 THREE READ PATHS — SAME QUERY, DIFFERENT WAIT
 ═══════════════════════════════════════════════════════════════════
 
@@ -3368,7 +3378,7 @@ Hedging attacks that tail directly. The client sends the duplicate only when the
 
 That independence is the whole reason hedging works. Hedging does not make one backend faster. It makes the slow path rare enough to ignore.
 
-```
+```text
 SEQUENTIAL RETRY (reactive)                HEDGED REQUEST (proactive)
 ════════════════════════════════════════   ════════════════════════════════════
 
@@ -3412,7 +3422,7 @@ SEQUENTIAL RETRY (reactive)                HEDGED REQUEST (proactive)
 
 The hedge delay is the one number that decides the cost. The table below shows the trade. The numbers are the share of calls that cross the threshold.
 
-```
+```text
   HEDGE DELAY            EXTRA LOAD          WHAT IT REMOVES
   ────────────────────────────────────────────────────────────────────
   no delay (all at once) 100%                nothing. This is plain
@@ -3489,7 +3499,7 @@ The rules of the gRPC policy matter for the design:
 
 The flow after the change looks like this:
 
-```
+```text
 PRODUCT PAGE CALL — gRPC HEDGING ON catalog.v1.Catalog/GetItem
 ═══════════════════════════════════════════════════════════════════════
 
@@ -3583,10 +3593,10 @@ The constraint source decides the automaton:
   FUNCTION CALLING     →  a JSON-schema constraint with a different framing
 ```
 
+```text
 NAIVE (PROMPT-ONLY) vs CONSTRAINED (MASKED):
 ════════════════════════════════════════════════════════════════════════
 
-```
   NAIVE — ask nicely in the prompt, then parse the result:
 
     prompt ──► [ MODEL ] ──► free text ──► [ parse ] ──► maybe OK
@@ -3656,7 +3666,7 @@ One step of the loop, spelled out:
 
 The trade-offs, stated honestly:
 
-```
+```text
   ┌──────────────────────────────────────────────────────────────┐
   │  PRO                                                         │
   │  • Valid by construction — no parse lane, no retry lane.     │
@@ -3789,7 +3799,7 @@ The honest part is what the constraint still does **not** buy:
      schema "minimum" / "maximum" annotations
 ```
 
-```
+```text
 THE FULL PICTURE — where each guarantee comes from
 ════════════════════════════════════════════════════════════════════════
 
@@ -3837,7 +3847,7 @@ Replication keeps whole copies. Three-way replication keeps 3 complete copies an
 
 One rule decides whether the code works in practice: **the fragments must sit in different failure domains.** Spread them across drives first, then nodes, then racks. A code that puts 16 fragments on 16 drives in one rack survives 4 drive failures and 0 rack failures.
 
-```
+```text
 SCHEME A - THREE-WAY REPLICATION            SCHEME B - ERASURE CODING RS(12,4)
 ════════════════════════════════════════    ══════════════════════════════════════════
 
@@ -3901,7 +3911,7 @@ SCHEME A - THREE-WAY REPLICATION            SCHEME B - ERASURE CODING RS(12,4)
 
 The numbers below come from one simple model. Each fragment fails alone with yearly probability p = 0.01. Data loss needs more than m failures in one stripe. Measure the trade by overhead and by durability:
 
-```
+```text
   SCHEME           OVERHEAD   LOSSES OK   P(STRIPE LOSS / YEAR)   NINES
   ─────────────────────────────────────────────────────────────────────────
   3x replication    3.000x       2 of 3          1.0e-06           6.0
@@ -3923,7 +3933,7 @@ Wider stripes lower overhead, and they raise the repair cost. Reed-Solomon repai
 
 Locally Repairable Codes (LRC) attack that bill. Azure published the classic layout LRC(12,2,2): 12 data fragments, 2 local parities, 2 global parities, 16 fragments in total. The data splits into 2 groups of 6. Each group carries its own parity. A single loss inside a group comes back from the other 6 fragments of that group, not from all 12.
 
-```
+```text
   RS(12,4) - REPAIR READS EVERY DATA FRAGMENT
   ─────────────────────────────────────────────────────────────────────────────
    ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┐
@@ -3952,7 +3962,7 @@ The first design is three-way replication. Usable capacity is 341 TiB. The team 
 
 The second design splits the lake into two pools. Small metadata and the Postgres WAL stay on replicated storage with 3 copies. Dataset shards and checkpoints move to an erasure-coded pool with RS(12,4). Usable capacity for the coded pool is 768 TiB, and the pool tolerates 4 drive failures.
 
-```
+```text
 CEPH - ONE POOL, ONE PROFILE, FOUR FAILURE DOMAINS
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -3973,7 +3983,7 @@ CEPH - ONE POOL, ONE PROFILE, FOUR FAILURE DOMAINS
 
 Then a drive fails at 02:14. The stripe holds 15 of 16 fragments, so reads still work. The read path rebuilds the missing fragment in RAM, and the caller sees more latency, not an error.
 
-```
+```text
 DRIVE d07 FAILS - DEGRADED READ PATH AND BACKGROUND HEAL PATH
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -4043,10 +4053,10 @@ The method became the default in 2026 because it pays three bills at once:
 - **Bandwidth** — token generation is memory-bandwidth-bound, not compute-bound. Every decode step re-reads the weights and the KV cache. Fewer bytes per weight is less traffic per token, so latency falls.
 - **Compute** — modern accelerators ship FP8 and FP4 matrix units with 2× to 4× the BF16 throughput.
 
+```text
 FULL PRECISION (BF16) vs QUANTIZED (INT4, per-group scale):
 ═══════════════════════════════════════════════════════════════
 
-```
   BF16 — every value keeps its own 16-bit float
 
     0.4213 ─┐
@@ -4289,10 +4299,10 @@ The broken link is a **read-write anti-dependency**. Transaction 1 writes a row 
 
 Berenson and co-authors named the anomaly in 1995, in *A Critique of ANSI SQL Isolation Levels*. That paper also defined snapshot isolation and showed that its "repeatable read" does not prevent this case. Adya's formal model calls the same case **G2** and **G2-item**.
 
+```text
 LOST UPDATE vs WRITE SKEW — the isolation check only compares rows:
 ═══════════════════════════════════════════════════════════════════════════
 
-```
   LOST UPDATE — both transactions write the SAME row
   ───────────────────────────────────────────────────
 
@@ -4330,10 +4340,10 @@ The canonical example is the hospital on-call rule. The rule says: at least one 
 
 Only one isolation level prevents write skew: **SERIALIZABLE**. PostgreSQL implements it with Serializable Snapshot Isolation (SSI, version 9.1 and later). SSI does not track the full graph. It uses a theorem: every non-serializable SI history contains two adjacent read-write anti-dependencies, a "dangerous structure".
 
+```text
 THE SHAPE SSI HUNTS FOR — two adjacent rw anti-dependencies:
 ═══════════════════════════════════════════════════════════════════════════
 
-```
     T1 ──rw──► T2 ──rw──► T3
                 ▲
                 └─ pivot. T3 is the first transaction to commit.
@@ -4372,7 +4382,7 @@ The honest limits of the fix:
 
 Rina keeps Rp 300.000 in each sub-account. Her combined balance is Rp 600.000. At 20:14 two requests arrive at almost the same time: Rp 400.000 from the ATM, and Rp 400.000 from the online app. The service runs the check inside the transaction, and the isolation level is PostgreSQL's default `READ COMMITTED` with an application-level snapshot read.
 
-```
+```text
 THE INVARIANT DIES SILENTLY
 ═══════════════════════════════════════════════════════════════════════════
 

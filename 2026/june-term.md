@@ -108,6 +108,7 @@ Reading (find patient info): Check the logbook first, then check the filing cabi
 
 How It Works
 
+```text
     WRITE ──▶ [ Memtable (sorted, in RAM) ]    ← fastest
                     │
                     │ (when full, flush to disk)
@@ -119,6 +120,7 @@ How It Works
                     │ (background compaction)
                     ▼
               [ Merged SSTable ]               ← fewer files, garbage collected
+```
 
 ### Example:
 
@@ -356,6 +358,7 @@ Think of it like changing the locks on every door in a massive office building w
 
 The Core Challenge
 
+```text
                     ┌─────────────────────┐
     Current state:  │       ONE IDP       │   ← e.g., Okta
                     │  (all apps trust it) │
@@ -366,6 +369,7 @@ The Core Challenge
      ┌────────┐      ┌────────┐      ┌────────┐
      │ GitHub │      │ Jira   │      │  Zoom  │   ...and 80+ more apps
      └────────┘      └────────┘      └────────┘
+```
 
 You need to point every single arrow to a new Identity Provider (IdP) — without those apps ever trusting a broken or missing identity.
 
@@ -510,6 +514,7 @@ A Correlation ID is that tracking number — for every single request inside you
 
 How It Works
 
+```text
 Client Service A Service B Service C
 │ │ │ │
 │ GET /order/42 │ │ │
@@ -529,6 +534,7 @@ Client Service A Service B Service C
 │ Every log line, every message, every DB row stamped with: "abc" │
 │ Search "abc" → full timeline instantly │
 └──────────────────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
@@ -908,9 +914,11 @@ Acyclic: There's no "send the plated sushi back to the rice cooker" — the belt
 Static: The manager designed this layout Monday morning and it stays the same all week. Every order follows the exact same path.
 
 If a customer orders miso soup too, the pipeline forks:
+```text
 ┌→ Rolling → Plating → Customer
 Rice Cooker ──┤
 └→ Soup Pot → Plating → Customer
+```
 
 The soup and sushi prep can happen in parallel (they're independent), but both must hit "Plating" before reaching the customer. The DAG captures this without any manual coordination.
 
@@ -1123,7 +1131,7 @@ import random
 class SimpleHNSW:
     """Minimal HNSW for learning — not production-grade."""
 
-    def init(self, dim: int, M: int = 16, ef_construction: int = 200):
+    def __init__(self, dim: int, M: int = 16, ef_construction: int = 200):
         self.dim = dim
         self.M = M
         self.ef_construction = ef_construction
@@ -1157,8 +1165,8 @@ class SimpleHNSW:
                     dist_n = np.linalg.norm(query - self.nodes[neighbor])
                     furthest = max(result, key=lambda x: x[0])[0]
                     if dist_n < furthest or len(result) < ef:
-                        heapq.heappush(candidates, (dist_n, neighbor)) (2/4)
-result.append((dist_n, neighbor))
+                        heapq.heappush(candidates, (dist_n, neighbor))
+                        result.append((dist_n, neighbor))
                         result = heapq.nsmallest(ef, result, key=lambda x: x[0])
         return result
 
@@ -1183,8 +1191,8 @@ result.append((dist_n, neighbor))
             curr_entry = result[0][1]
 
         for l in range(min(level, self.max_level), -1, -1):
-            result = self._search_layer(vector, curr_entry, self.efconstruction, l)
-            neighbors = [n for , n in result[:self.M]]
+            result = self._search_layer(vector, curr_entry, self.ef_construction, l)
+            neighbors = [n for _, n in result[:self.M]]
             self.graphs[l][node_id] = set(neighbors)
             for n in neighbors:
                 self.graphs[l][n].add(node_id)
@@ -1192,8 +1200,8 @@ result.append((dist_n, neighbor))
                     n_neighbors = list(self.graphs[l][n])
                     n_dists = [(np.linalg.norm(self.nodes[n] - self.nodes[nn]), nn)
                                for nn in n_neighbors]
-                    ndists.sort(key=lambda x: x[0])
-                    self.graphs[l][n] = {nn for , nn in n_dists[:self.M]}
+                    n_dists.sort(key=lambda x: x[0])
+                    self.graphs[l][n] = {nn for _, nn in n_dists[:self.M]}
             curr_entry = result[0][1]
 
         if level > self.max_level:
@@ -1207,8 +1215,8 @@ result.append((dist_n, neighbor))
         for l in range(self.max_level, 0, -1):
             result = self._search_layer(query, curr_entry, 1, l)
             curr_entry = result[0][1]
-        result = self._search_layer(query, curr_entry, k, 0) (3/4)
-return [(dist, nid) for dist, nid in heapq.nsmallest(k, result, key=lambda x: x[0])]
+        result = self._search_layer(query, curr_entry, k, 0)
+        return [(dist, nid) for dist, nid in heapq.nsmallest(k, result, key=lambda x: x[0])]
 
 ```
 
@@ -1420,8 +1428,8 @@ class DiagnosisReport:
 ─── Stage 1: AI Inference ───
 class AIModel:
     """Simulates a chest X-ray classifier."""
- (2/7)
-def predict(self, scan: XRayScan) -> dict:
+
+    def predict(self, scan: XRayScan) -> dict:
         # Simulate: model returns findings + confidence score
         findings_pool = [
             "No significant abnormalities",
@@ -1464,7 +1472,7 @@ def route_for_review(scan: XRayScan) -> str:
 class Radiologist:
     """A human expert who reviews low-confidence predictions."""
 
-    def init(self, name: str):
+    def __init__(self, name: str):
         self.name = name
         self.reviews_completed = 0
 
@@ -1475,8 +1483,8 @@ class Radiologist:
         print(f"   AI findings: {scan.findings}")
         print(f"   AI confidence: {scan.ai_confidence:.2%}")
 
-        # Simulate human judgment — may agree, refine, or override (3/7)
-if random.random() > 0.15:  # 85% agreement
+        # Simulate human judgment — may agree, refine, or override
+        if random.random() > 0.15:  # 85% agreement
             final_diagnosis = scan.findings[0]
             notes = "Confirmed. No additional findings."
         else:
@@ -1525,8 +1533,8 @@ def run_hitl_pipeline(scans: list[XRayScan]) -> list[DiagnosisReport]:
             report = radiologist.review(scan, ai_summary)
             print(f"🔍 Scan {scan.image_id}: REVIEWED by {report.reviewed_by}")
             print(f"   Final diagnosis: {report.final_diagnosis}")
-            if report.radiologist_notes != "Confirmed. No additional findings.": (4/7)
-print(f"   ⚠️ Override: {report.radiologist_notes}")
+            if report.radiologist_notes != "Confirmed. No additional findings.":
+                print(f"   ⚠️ Override: {report.radiologist_notes}")
 
         reports.append(report)
 
@@ -1664,7 +1672,7 @@ def load_approved_spec(spec_path: str) -> Set[str]:
 
 def get_live_traffic_paths() -> Set[str]:
 
-"""Query the API gateway / WAF for paths receiving real traffic
+    """Query the API gateway / WAF for paths receiving real traffic
        in the last rolling window (e.g., last 24 hours).
     """
     # In real life: query Kong / AWS API Gateway / Envoy access logs
@@ -1817,6 +1825,7 @@ Fog Computing is a decentralized computing architecture that extends cloud capab
 
 The computing continuum looks like this:
 
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    CLOUD LAYER                               │
 │   Central data centers — unlimited storage, global compute   │
@@ -1836,11 +1845,12 @@ The computing continuum looks like this:
 │   IoT devices, sensors, actuators — data origination         │
 │   Latency: <5ms                                              │
 └─────────────────────────────────────────────────────────────┘
+```
 
 
 What makes fog different from edge computing:
 
-| Aspect | Fog Computing | Edge Computing | (1/8)
+| Aspect | Fog Computing | Edge Computing |
 |--------|--------------|---------------|
 | Location | Between cloud and edge (LAN/WAN gateways) | Directly on the device (sensor, camera, etc.) |
 | Processing | Aggregates, filters, and caches data from many devices | Processes data on the individual device |
@@ -1913,7 +1923,7 @@ class MachineSensor:
 
 class FogNode:
 
-"""Processes sensor data locally — only sends summaries to cloud."""
+    """Processes sensor data locally — only sends summaries to cloud."""
 
     def __init__(self, node_id: str, window_size: int = 10):
         self.node_id = node_id
@@ -2409,7 +2419,7 @@ class InsecureTaskService:
 # ═══════════════════════════════════════════════
 
 class SecureTaskService:
-"""Every query is scoped to the current tenant."""
+    """Every query is scoped to the current tenant."""
 
     def __init__(self, current_tenant_id: str):
         # Injected at the start of every request (from auth token)

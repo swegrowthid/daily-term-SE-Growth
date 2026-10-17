@@ -10,6 +10,7 @@ MCP (Model Context Protocol) is the open standard that connects AI models to ext
 
 The concept comes from the same principle as stateless HTTP, stateless functions, and stateless services: each request contains everything the server needs to process it.
 
+```text
 STATEFUL vs. STATELESS MCP SERVER:
 ═══════════════════════════════════════════════════════════════
 
@@ -58,12 +59,13 @@ STATEFUL vs. STATELESS MCP SERVER:
     │  CONS: client must send ALL context every time,      │
     │        no built-in continuity                        │
     └─────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual comparison of how Stateless vs. Stateful MCP servers handle the same two consecutive requests from an AI assistant.
 
-```
+```text
 An AI coding assistant needs to (1) look up a user's GitHub repositories, then (2) open a specific file from those results.
 ═══════════════════════════════════════════════════════════════
   STATEFUL MCP SERVER (Remembers between calls)
@@ -138,6 +140,7 @@ A Hybrid Stack is an architecture that combines two or more fundamentally differ
 
 The term appears in many contexts — but the common thread is always the same: a single technology has strengths and weaknesses, and a hybrid stack uses each technology where it excels while compensating for its weaknesses with complementary technologies.
 
+```text
 THE CORE PRINCIPLE:
 ═══════════════════════════════════════════════════════════════
 
@@ -179,12 +182,13 @@ THE CORE PRINCIPLE:
   ✅ Each technology does what it's BEST at
   ✅ Weaknesses of one are covered by another
   ✅ Overall system is stronger than any single tool
+```
 
 ### Example:
 
 A visual comparison of single-technology vs. hybrid stacks across three real-world scenarios.
 
-```
+```text
 Web App Data Storage
 ═══════════════════════════════════════════════════════════════
   THE PROBLEM: An e-commerce app needs to store:
@@ -254,6 +258,7 @@ The "tectonic" name captures two ideas:
 1. Tectonic as in plate tectonics — the constant, powerful, ground-shifting force of AI-generated apps that reshape the organization's landscape, for better or worse
 2. Tectonic as in a platform shift — AI as a foundational transformation (like electricity, the internet, or the smartphone) that demands new infrastructure, not just new features.
 
+```text
 THE PROBLEM THE PLATFORM SOLVES:
 ═══════════════════════════════════════════════════════════════
 
@@ -288,12 +293,13 @@ THE PROBLEM THE PLATFORM SOLVES:
   │  │  Each app invents its own roles & permissions,  │   │
   │  │  no unified view of who can access what         │   │
   │  └─────────────────────────────────────────────────┘   │
+```
 
 ### Example:
 
 A visual comparison of an organization without vs. with a Tectonic AI Platform as it scales AI development.
 
-```
+```text
 A company's teams start using AI to ship internal tools and automations rapidly over 12 months.
 ═══════════════════════════════════════════════════════════════
   WITHOUT A TECTONIC PLATFORM (Speed Without Structure)
@@ -412,6 +418,7 @@ The Retry Budget Pattern is a resilience strategy that caps the total amount of 
 
 It's the direct answer to the retry storm problem (which we covered earlier in "Congestion Bug"): naive retries create a positive feedback loop where more failures trigger more retries, which cause more load, which cause more failures. The retry budget breaks that loop by making the system give up gracefully when retries would do more harm than good.
 
+```text
 NAIVE RETRIES vs. RETRY BUDGET:
 ═══════════════════════════════════════════════════════════════
 
@@ -461,6 +468,7 @@ NAIVE RETRIES vs. RETRY BUDGET:
     │  ✅ Load on downstream is controlled                    │
     │                                                         │
     └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
@@ -545,6 +553,7 @@ Tenant-Aware Scaling is the ability of a multi-tenant system to scale its resour
 
 It's the operational answer to the "noisy neighbor" problem and the challenge of fairness in shared infrastructure: if one large tenant's traffic spikes, it shouldn't consume resources meant for 100 smaller tenants. Tenant-aware scaling ensures that scaling decisions account for who is causing the load, not just how much total load there is.
 
+```text
 UNIFORM SCALING vs. TENANT-AWARE SCALING:
 ═══════════════════════════════════════════════════════════════
 
@@ -585,12 +594,12 @@ UNIFORM SCALING vs. TENANT-AWARE SCALING:
   └─────────────────────────────────────────────────────────┘
 
   ─────────────────────────────────────────────────────────────
+```
 
   TENANT-AWARE SCALING (scale based on per-tenant needs):
 
 ### Example:
 
-```
 
 Analogy — The Apartment Building's Elevators 🏢
 
@@ -625,6 +634,7 @@ A visual comparison of **Uniform** vs. **Tenant-Aware** scaling during a real-wo
 
 Today is Black Friday. BigCorp's traffic spikes 10x.
 
+```text
 ═══════════════════════════════════════════════════════════════
   TENANT-AWARE SCALING TECHNIQUES
   ═══════════════════════════════════════════════════════════════
@@ -669,6 +679,7 @@ TF-IDF is a numerical formula that measures how important a word is to a documen
 
 The genius of TF-IDF is that it answers a subtle question: "which words actually matter?" Some words appear a lot in a document but don't tell you much (like "the," "and," "is"). Other words appear less often but are far more meaningful (like "quantum" or "algorithm"). TF-IDF separates the noise from the signal.
 
+```text
 It combines two scores:
 THE TWO PARTS OF TF-IDF:
 ═══════════════════════════════════════════════════════════════
@@ -716,6 +727,7 @@ THE TWO PARTS OF TF-IDF:
     │  ✅ Rare ACROSS the corpus (high IDF)                   │
     │                                                         │
     └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
@@ -851,6 +863,7 @@ day - 11
 WebMCP is a proposed web standard (from Chrome and the W3C Web Machine Learning community group) that lets websites expose structured, machine-readable tools for AI agents — so an agent knows exactly how to interact with a page instead of guessing. It extends the Model Context Protocol (MCP) from the server side to the client side, inside the browser, treating each web page as an "in-page MCP server" that implements its tools in JavaScript and HTML rather than on a backend.
 
 The core problem WebMCP solves is actuation reliability. When an AI agent browses a website, it normally "reads" the page and tries to figure out what each button, field, and link does by looking at it — then simulates clicks and typing (actuation). This is slow, error-prone, and leaves every step open to interpretation. WebMCP removes the guessing: the website declares the purpose of its features, and the agent uses them correctly.
+```text
 TRADITIONAL AGENT ACTUATION vs. WEBMCP:
 ═══════════════════════════════════════════════════════════════
 
@@ -901,6 +914,7 @@ TRADITIONAL AGENT ACTUATION vs. WEBMCP:
     │  The agent uses the page's OWN logic — no guessing.     │
     │                                                         │
     └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
@@ -928,6 +942,7 @@ eBPF is a Linux kernel technology that lets you run sandboxed programs inside th
 
 The name is historical (it evolved from the original BPF packet filter used for network packet filtering). But modern eBPF is far broader: it's a safe, general-purpose execution environment inside the kernel, used for observability, performance tracing, network monitoring, security enforcement, and more.
 
+```text
 WHAT eBPF DOES — THE CORE IDEA:
 ═══════════════════════════════════════════════════════════════
 
@@ -966,12 +981,13 @@ WHAT eBPF DOES — THE CORE IDEA:
   │  • Can attach/remove programs on a LIVE running system  │
   │                                                         │
     └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual walkthrough of how eBPF is used for three major applications — observability, networking, and security.
 
-```
+```text
 ═══════════════════════════════════════════════════════════════
   THE GOAL: See every HTTP request a container makes,
   with latency, without modifying the app.
@@ -1035,6 +1051,7 @@ day - 13
 The ReAct Loop is a prompting and agent-architecture pattern that interleaves Reasoning and Acting in a loop — letting an AI model alternate between thinking through a problem and taking actions (calling tools) to gather information or affect the world, then using the results to reason further. The name combines "Re" (Reasoning) and "Act" (Acting).
 
 It was introduced in the 2022 paper "ReAct: Synergizing Reasoning and Acting in Language Models" (Yao et al.). The key insight: reasoning alone can't access real-world information (the model might hallucinate facts it could just look up), and acting alone (blindly calling tools) lacks strategy. Combining them — reason, act, observe, reason again — produces much better results for tasks that need external knowledge or multi-step problem solving.
+```text
 THE ReAct LOOP:
 ═══════════════════════════════════════════════════════════════
 
@@ -1080,12 +1097,13 @@ THE ReAct LOOP:
     The loop repeats until the goal is reached.                 │
     Each iteration adds real information from the world         │
     that the model didn't know before.                          │
+```
 
 ### Example:
 
 A visual walkthrough of a ReAct loop solving a multi-step problem that requires external information.
 
-```
+```text
 User asks the agent: "What's the population of the capital of the country that won the most medals at the 2024 Olympics?"
 
 This requires multiple steps AND external information the model doesn't know.
@@ -1198,6 +1216,7 @@ Accelerated Inference is the use of specialized hardware and optimization techni
 
 At its core, inference (the model "running" to make a prediction) is mostly matrix multiplication — multiplying huge arrays of numbers billions of times. CPUs are great at sequential, varied tasks but have limited cores for parallel math. Accelerators (GPUs, TPUs, NPUs) have thousands of cores that do the same math simultaneously — making them dramatically faster for the parallel nature of neural networks.
 
+```text
 CPU vs. ACCELERATOR FOR INFERENCE:
 ═══════════════════════════════════════════════════════════════
 
@@ -1222,7 +1241,7 @@ CPU vs. ACCELERATOR FOR INFERENCE:
 
   ┌─────────────────────────────────────────────────────────┐
   │                                                         │
-  │  GPU (Graphics Processing Unit) — Parallel accelerator   │
+  │  GPU (Graphics Processing Unit) — Parallel accelerator  │
   │  ───────────────────────────────────────────            │
   │                                                         │
   │  • THOUSANDS of cores (thousands to tens of thousands)  │
@@ -1230,21 +1249,22 @@ CPU vs. ACCELERATOR FOR INFERENCE:
   │    thousands of matrix operations SIMULTANEOUSLY        │
   │  • Perfect for the parallel math of neural networks     │
   │                                                         │
-  │  [C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C]   │
-  │  [C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C]   │
-  │  [C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C]   │
-  │  (thousands of cores)                                  │
-    │                                                         │
-    │  A model might take 10-50 milliseconds per prediction   │
-    │  → 50-100x faster than CPU                              │
-    │                                                         │
-    └─────────────────────────────────────────────────────────┘
+  │  [C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C]    │
+  │  [C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C]    │
+  │  [C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C][C]    │
+  │  (thousands of cores)                                   │
+  │                                                         │
+  │  A model might take 10-50 milliseconds per prediction   │
+  │  → 50-100x faster than CPU                              │
+  │                                                         │
+  └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual walkthrough of accelerated inference in action — from server GPUs to on-device NPUs, and the optimization techniques involved.
 
-```
+```text
 Server-Side Inference (LLMs / Image Models)
 ═══════════════════════════════════════════════════════════════
   HOW A CLOUD LLM SERVES MILLIONS OF REQUESTS
@@ -1409,6 +1429,7 @@ Engineering as a Service (EaaS) is a delivery model where engineering capabiliti
 It's the engineering equivalent of how the industry moved from buying software to subscribing to SaaS. Instead of owning the capability (a standing team you pay for whether or not they're busy), you access it on demand (only pay for the engineering you actually use).
 
 The "as a Service" pattern across the stack:
+```text
 THE EVOLUTION TO "AS A SERVICE":
 ═══════════════════════════════════════════════════════════════
 
@@ -1431,6 +1452,7 @@ THE EVOLUTION TO "AS A SERVICE":
   │  "I don't staff a team, I consume engineering."        │
   │                                                         │
   └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
@@ -1581,6 +1603,7 @@ The Noisy Neighbor problem is a performance issue in shared, multi-tenant system
 
 It's the classic fairness failure of multi-tenancy: when multiple customers share pooled infrastructure, one misbehaving (or just extremely active) tenant can create a contention problem that makes the experience worse for everyone. The noisy neighbor doesn't necessarily intend harm — they might just have a legitimate spike (a big batch job, a sudden traffic surge, a heavy query) — but the effect is that other tenants suffer.
 
+```text
 THE PROBLEM IN ACTION:
 ═══════════════════════════════════════════════════════════════
 
@@ -1610,12 +1633,13 @@ THE PROBLEM IN ACTION:
   │  because of Tenant C. That's the noisy neighbor.        │
   │                                                         │
   └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual walkthrough of the noisy neighbor problem in three common scenarios — and the solutions.
 
-```
+```text
 ═══════════════════════════════════════════════════════════════
   THE PROBLEM: One tenant runs a huge batch job
 ═══════════════════════════════════════════════════════════════
@@ -1650,6 +1674,7 @@ RASP (Runtime Application Self-Protection) is a security technology that is embe
 
 The key difference from traditional security tools: RASP has context. A firewall sees requests and patterns; RASP sees what the application is actually doing with those requests — which functions it calls, what data it accesses, whether input is being used in a dangerous way. This lets RASP catch attacks that signature-based tools miss, with far fewer false positives.
 
+```text
 RASP vs. TRADITIONAL SECURITY:
 ═══════════════════════════════════════════════════════════════
 
@@ -1687,12 +1712,13 @@ RASP vs. TRADITIONAL SECURITY:
                            │         │ BLOCK attacks live │
                            │         └────────────────────│
                            └──────────────────────────────┘
+```
 
 ### Example:
 
 A visual comparison of how a WAF vs. RASP handles two real attacks.
 
-```
+```text
 SQL Injection Attack
 ═══════════════════════════════════════════════════════════════
   THE ATTACK: A user submits: username = "' OR '1'='1"
@@ -1755,6 +1781,7 @@ API-Driven Development (also called API-first or API-centric development) is a s
 
 In API-driven development, the team defines the API contract (endpoints, request/response formats, data models) up front, and then all components — the server that implements it, the frontend that consumes it, the mobile apps, the third-party integrations — are built in parallel against that agreed contract. The API becomes the central agreement between all the pieces.
 
+```text
 TRADITIONAL vs. API-DRIVEN:
 ═══════════════════════════════════════════════════════════════
 
@@ -1791,12 +1818,13 @@ TRADITIONAL vs. API-DRIVEN:
   │  • The contract is the source of truth                  │
   │                                                         │
   └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual walkthrough of building a product API-first, with parallel teams working against the same contract.
 
-```
+```text
 A company builds a "book reviews" product — with a web app, a mobile app, and a public API for partners.
 ═══════════════════════════════════════════════════════════════
   STEP 1: DESIGN THE API CONTRACT (Before any code)
@@ -1911,6 +1939,7 @@ Chain of Responsibility is a behavioral design pattern where a request is passed
 
 The core idea: decouple the sender of a request from its receiver. The sender doesn't need to know who will process it or how — it just sends the request into the chain, and the chain figures out which handler is responsible.
 
+```text
 THE CHAIN OF RESPONSIBILITY:
 ═══════════════════════════════════════════════════════════════
 
@@ -1938,12 +1967,13 @@ THE CHAIN OF RESPONSIBILITY:
                                                   (unhandled —
                                                    or a default
                                                    handler)
+```
 
 ### Example:
 
 A visual walkthrough of the Chain of Responsibility pattern in three common real-world uses.
 
-```
+```text
 ═══════════════════════════════════════════════════════════════
   THE PATTERN: HTTP requests flow through middleware handlers
 ═══════════════════════════════════════════════════════════════
@@ -1990,6 +2020,7 @@ Homomorphic Encryption is a cryptographic technique that lets you perform comput
 
 It's the "holy grail" of data privacy: it allows an untrusted party (like a cloud server) to process your sensitive data while never seeing the actual data — only its encrypted form. The server does useful work on your behalf, but learns nothing about your information in the process.
 
+```text
 NORMAL ENCRYPTION vs. HOMOMORPHIC ENCRYPTION:
 ═══════════════════════════════════════════════════════════════
 
@@ -2038,12 +2069,13 @@ NORMAL ENCRYPTION vs. HOMOMORPHIC ENCRYPTION:
                       
                         The server computed on the ENCRYPTED data and never saw
                         the plaintext. Only the owner can decrypt the result.
+```
 
 ### Example:
 
 A visual walkthrough of homomorphic encryption in two real-world use cases.
 
-```
+```text
 Privacy-Preserving Healthcare Analytics
 ═══════════════════════════════════════════════════════════════
   THE GOAL: Compute statistics across hospitals' patient data
@@ -2100,6 +2132,7 @@ The Rate-Aware Processing Pattern is a design pattern that respects the rate lim
 
 The core tension it solves: every external system has limits (X requests per minute, Y operations per second). Ignore them and your system breaks (requests fail, throttled, or rejected). Respect them blindly and you leave performance on the table. The rate-aware pattern tracks the limit precisely so you use all of it — without exceeding it.
 
+```text
 THE PROBLEM THE PATTERN SOLVES:
 ═══════════════════════════════════════════════════════════════
 
@@ -2149,12 +2182,13 @@ THE PROBLEM THE PATTERN SOLVES:
     │  → No 429 failures, no retry storm, no tripled time     │
     │                                                         │
     └─────────────────────────────────────────────────────────┘
+```
 
 ### Example:
 
 A visual walkthrough of the rate-aware processing pattern applied to a real workload.
 
-```
+```text
 A system needs to process 500 customer records through an AI API that allows **60 requests per minute**.
 ═══════════════════════════════════════════════════════════════
   HOW RATE-AWARE PROCESSING WORKS (Step by Step)
@@ -2246,6 +2280,7 @@ Mixture of Experts (MoE) is a neural network architecture that makes a model dra
 
 The key idea is **conditional computation**: instead of every neuron firing on every token (a "dense" model), MoE routes each token to just the experts best suited to it. This is the engine behind the current generation of highly efficient LLMs — DeepSeek-V3/R1, Mixtral, Qwen, and many open models use some form of MoE to deliver frontier quality at a fraction of the inference cost. It is a direct answer to the question: *"How do we make a model smarter, without making every single request slower and more expensive?"*
 
+```text
 DENSE vs. MIXTURE OF EXPERTS:
 ═══════════════════════════════════════════════════════════════
 
@@ -2294,6 +2329,7 @@ DENSE vs. MIXTURE OF EXPERTS:
     │  ❌ Needs a router + balance to avoid experts   │
     │     being ignored or overloaded                │
     └─────────────────────────────────────────────────┘
+```
 
 The trick that makes MoE work: **sparsity**. "100 total, 2 active" means the model's *capacity* can grow ~50x with near-flat *compute*. That decoupling — capacity from cost — is the whole point.
 
@@ -2301,7 +2337,7 @@ The trick that makes MoE work: **sparsity**. "100 total, 2 active" means the mod
 
 How a token flows through an MoE LLM layer — the difference between "one big block" and "many experts + a router."
 
-```
+```text
 A model generates the sentence "The cat sat on the mat."
 Focus on the layer processing the token "sat".
 ═══════════════════════════════════════════════════════════════

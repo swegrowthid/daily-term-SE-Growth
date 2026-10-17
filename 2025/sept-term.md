@@ -143,7 +143,7 @@ Standby Server:
 
 WAL in Distributed Systems:
 
-```
+```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │   Client    │    │   Node 1    │    │   Node 2    │
 └─────────────┘    └─────────────┘    └─────────────┘
@@ -441,7 +441,7 @@ AMQP (Advanced Message Queuing Protocol) is an open standard messaging protocol 
 
 Microservices Communication
 
-```
+```text
 [Order Service] ──→ [AMQP Exchange] ──→ [Payment Queue] ──→ [Payment Service]
                          │
                          ├──→ [Inventory Queue] ──→ [Inventory Service]
@@ -658,7 +658,7 @@ Add features to your app without changing the main code by running helper servic
 
 ### Example:
 E-commerce Website with Security Sidecar
-```
+```text
 ┌─────────────────┐    ┌──────────────────┐
 │  Shopping App   │    │ Security Sidecar │
 │ ┌─────────────┐ │    │ ┌──────────────┐ │
@@ -780,7 +780,7 @@ he Zero Trust Principle is a cybersecurity philosophy that assumes "never trust,
 
 ### Example:
 - Google's BeyondCorp:
-```
+```text
 Employee wants to access Gmail admin panel:
 ┌─────────────────────────────────┐
 │ 1. Multi-factor authentication  │
@@ -814,7 +814,7 @@ Load distribution: Spread read traffic across multiple replicas
 
 ### Example:
 E-commerce Website
-```
+```text
 👥 Users writing reviews/orders ──► 📊 Primary DB (Writes only)
                                       │
                                       ├── Sync ──► 📖 Read Replica 1
@@ -861,7 +861,7 @@ Tail Latency refers to the slowest response times in a system - the "long tail" 
 
 **Why It's Called "Tail" Latency**
 In a graph of response times, most requests cluster on the left (fast), but some stretch out to the right forming a "tail" of slow requests.
-```
+```text
 Number of Requests
      ▲
      │    📊
@@ -875,7 +875,7 @@ Number of Requests
 
 ### Example:
 - Amazon's Discovery
-```
+```text
 Tail latency increase of +100ms = -1% in sales
 Why? That 1% of slow users represents:
 ├─ 1 million daily visitors

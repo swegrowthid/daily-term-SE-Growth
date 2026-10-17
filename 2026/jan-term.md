@@ -377,7 +377,7 @@ Key idea: "Black-box" testing that attacks your app while it's running to find s
 
 Testing a Login Form
 
-```
+```text
 Normal User:
 ┌─────────────────────────┐
 │  Login Form             │
@@ -444,7 +444,7 @@ Severity: CRITICAL (CVSS Score: 9.8/10)
 
 ### Example:
 
-```
+```text
 Normal MongoDB Query:
 ┌─────────────────────────────────────┐
 │ Query: Find user with id="123"     │
@@ -658,7 +658,7 @@ HyperLogLog Approach
 import hyperloglog
 
 # Create HyperLogLog counter (uses ~1.5 KB)
-hll = hyperloglog.HyperLogLog(0.01)  # 1% error rate
+hll = hyperloglog.HyperLogLog(0.02)  # 2% error rate
 
 # Add visitors
 hll.add("user_12345")
@@ -746,7 +746,7 @@ Technology Speed Use Case Cost
 
 Video Streaming Platform
 
-```
+```text
 The Problem
 You need to serve 4K video to 100 million concurrent users with:
 
@@ -1193,7 +1193,7 @@ Think of it like a highway: even if individual lanes (cores) have capacity, the 
 
 **What Gets Saturated?**
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │         CPU Socket (e.g., Intel Xeon)       │
 ├─────────────────────────────────────────────┤
@@ -1295,7 +1295,7 @@ Think of it like organizing a library: instead of checking every book to find on
 
 Uber - Finding Nearby Drivers
 
-```
+```text
 Problem: User requests ride in San Francisco
 - 5,000 drivers currently active in SF
 - Need to find closest 10 drivers
@@ -1494,6 +1494,7 @@ Simple Analogy
 
 ENIAC vs Modern Computer:
 
+```text
 🏢 ENIAC (1945):
 ├─ Size: Entire room (1,800 sq ft)
 ├─ Weight: 30 tons (like 6 elephants)
@@ -1511,6 +1512,7 @@ ENIAC vs Modern Computer:
 ├─ Memory: Billions of numbers
 ├─ Programming: Download apps instantly
 └─ Cost: $1,000
+```
 
 Your phone is 200,000,000× faster and fits in your pocket!
 
@@ -1521,7 +1523,7 @@ The Problem
 Artillery Question:
 "If I fire a shell at 45° angle with velocity 500 m/s, where does it land?"
 
-```
+```text
 Manual Calculation (1943)
 
 Human "Computer" Process:
