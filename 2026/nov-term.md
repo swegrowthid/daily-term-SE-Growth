@@ -1132,3 +1132,212 @@ polling tables, you stop missing deletes, and the request path stops
 writing to three places at once.
 
 ---
+
+day - 6
+
+## GitOps
+
+### Definition:
+
+**GitOps** is a way to run a system from a Git repository. Git holds the
+desired state. The system holds the live state. A controller runs inside
+the system. The controller compares both states. It applies the difference.
+It repeats this comparison in a loop, not only at deploy time.
+
+GitOps follows four rules:
+
+1. Git holds the desired state. Git is the single source of truth.
+2. A controller inside the system pulls state from Git. Nothing pushes.
+3. The controller detects drift. It can also fix drift.
+4. Every change starts as a Git change: a merge, a tag, a revert.
+
+The key difference from classic CI/CD is who acts on the cluster.
+
+PUSH MODEL (classic CI/CD)       PULL MODEL (GitOps)
+─────────────────────────────    ────────────────────────────────
+developer                        developer
+   │                                │
+   ▼                                ▼
+git push                         git push
+   │                                │
+   ▼                                ▼
+┌──┬────────────────────────┐    ┌──┬─────────────────┐
+│ CI pipeline               │    │ Git repository     │
+│ build, test, sign image   │    │ = desired state    │
+│ knows cluster credentials │    │ holds full history │
+└──┴────────────────────────┘    └──┴─────────────────┘
+   │                                │
+   ▼                                ▼
+kubectl apply ──────► cluster    ┌──┬───────────────────────────┐
+   │                             │ controller in cluster        │
+   ▼                             │ (Argo CD / Flux)             │
+pipeline ends here               │ reads Git, reads live state  │
+nobody watches live state        │ holds no cluster credentials │
+drift stays until next deploy    └──┴───────────────────────────┘
+rollback = rerun old pipeline       │
+                                    ▼
+                                 cluster follows Git
+                                 drift found within minutes
+                                 drift fixed by the loop
+                                 rollback = git revert
+
+Pull mode moves authority. The pipeline builds and tests the image. It
+never touches the cluster. The controller inside the cluster does the
+work. This change has three effects:
+
+- **Credentials stay narrow.** CI needs registry access. The controller
+  needs cluster access. A stolen CI token cannot reach production.
+- **History is one place.** `git log` shows who changed what and when.
+  Cluster logs show only that a controller applied a manifest.
+- **Rollback is a Git operation.** Revert the commit. The controller
+  applies the old state on the next cycle.
+
+The controller runs a reconcile loop. The loop never stops.
+
+   ┌──────────────────────────────────────────────────┐
+   │ RECONCILE LOOP — runs inside the system, forever │
+   │ step 1: read desired state   (Git commit SHA)    │
+   │ step 2: read live state      (cluster objects)   │
+   │ step 3: diff the two states                      │
+   └─────────────────────────┴────────────────────────┘
+                             │
+             ┌───────────────┴───────────────┐
+             ▼                               ▼
+       states match                    states differ
+             │                               │
+             │  status: InSync               ▼
+                              ┌──────────────┬───────────────────────────────┐
+                              │ sync        apply the Git state              │
+                              │ self-heal   revert manual edits              │
+                              │ prune       delete objects Git removed       │
+                              │ alert       report failure, retry next cycle │
+                              └──────────────┴───────────────────────────────┘
+             │                               │
+             └───────────────┴───────────────┘
+                             │
+                             ▼
+                   wait, then run again
+        Argo CD: every 120 s (+ up to 60 s jitter)
+             Flux: your interval, 60 s or more
+
+Two decisions control the loop: **when** it runs and **what it fixes**.
+
+```text
+TOOL      GIT POLL         AUTO-SYNC       SELF-HEAL       PRUNE
+Argo CD   120 s + jitter   opt-in          opt-in          opt-in
+Flux      your interval    on by default   on by default   explicit
+
+Defaults read from docs of Argo CD v3.5.6 and Flux v2.10.0 (Oct 2026).
+```
+
+Argo CD reports drift until you enable `syncPolicy.automated`. This is
+safe for change-controlled production. Flux corrects drift every cycle
+by default. That is strict, and it surprises new teams.
+
+**Drift is not failure. Sync and health are two different signals.**
+
+  ┌───────────────────────────────────────────────────┐
+  │ Synced     live state == Git state                │
+  │ OutOfSync  live state != Git state                │
+  │                                                   │
+  │ Healthy    pods ready, traffic fine               │
+  │ Degraded   pods failing                           │
+  │                                                   │
+  │ OutOfSync + Healthy = someone edited the cluster. │
+  │ Synced + Degraded    = Git itself is wrong.       │
+  └───────────────────────────────────────────────────┘
+
+Because of that split, you must decide who owns each field. A field
+with two owners causes endless drift alerts. The ownership map comes
+first, before you enable self-heal.
+
+```text
+FIELD                          OWNER              GITOPS ACTION
+image tag, env, limits         Git (intent)       keep in Git, diff every cycle
+uid, resourceVersion, status   the cluster        ignore, never alert
+spec.replicas                  HPA / autoscaler   add an ignore rule
+applied manifest               the controller     alert on controller failure
+```
+
+Three traps appear in real use:
+
+- **Replicas fight.** Git holds 3 replicas. The HPA raises it to 12.
+  The loop resets it to 3 every cycle. Fix: remove `spec.replicas`
+  from Git, or add an ignore rule for that path.
+- **Two controllers, one object.** Argo CD and Flux both manage the
+  same Deployment in the same namespace. Each applies on its own
+  schedule. The state oscillates and the diff never settles. Rule:
+  one owner per object per namespace.
+- **Secrets in Git.** Plain text in Git is a leak. Encrypt the file
+  (SOPS, sealed secrets), or store only a reference in Git.
+
+When you must break the loop — for an emergency edit — pause the
+controller instead of fighting it. Argo CD 3.4 added a cluster-level
+pause: `argocd cluster pause production-cluster`. The loop runs again
+after `argocd cluster resume`. Flux has `flux suspend kustomization NAME`.
+
+### Example:
+
+A payments team runs checkout-api on one production cluster. Argo CD
+manages it. The desired state lives in a Git repository. This is a
+worked scenario, not a named company.
+
+```text
+  TIME   EVENT                                 SIGNAL
+  t0     merge PR #482: image 1.5.0 -> 1.5.1   Git holds the new state
+  t1     Argo CD polls the repo (<= 120 s)     OutOfSync / Healthy
+  t2     sync runs a rolling update            live = 1.5.1, Synced
+  t3     02:41 on-call edits the Deployment    live != Git, OutOfSync
+  t4     next cycle runs with self-heal on     edit reverted in <= 120 s
+  t5     on-call pauses, fixes Git, resumes    Git holds the hotfix
+```
+
+Step t3 is the lesson. The engineer applies an emergency fix with
+`kubectl set image`. It works for two minutes. The next cycle reverts
+it, because Git does not know it. The fix vanishes during an incident.
+
+The correct path keeps Git as the only writer:
+
+```text
+1. pause     argocd cluster pause production-cluster
+2. apply     kubectl set image ... (hotfix now, incident stops)
+3. commit    backport the same change to Git, merge the PR
+4. resume    argocd cluster resume production-cluster
+5. verify    app shows Synced, and git log shows who and why
+```
+
+The incident exposed two gaps. The team fixes both:
+
+```text
+BEFORE (push, manual)                   AFTER (GitOps)
+────────────────────────────────────    ──────────────────────────────────
+hotfix: kubectl on prod only            hotfix: PR + merge to Git
+audit:  cluster logs, partial           audit:  git log, complete
+drift:  found at next incident          drift:  found in <= 120 s
+drift:  ignored, nobody watches         drift:  alerted and reverted
+rollback: rerun old pipeline            rollback: git revert
+access:  CI holds prod cluster token    access:  CI holds no cluster token
+```
+
+The migration cost is small, and the order matters:
+
+```text
+1. declare state in Git          (one repo per environment)
+2. install the controller        (read-only first)
+3. run diff mode for a week      (no auto-sync, read the reports)
+4. set the ownership map         (replicas, status, generated fields)
+5. enable auto-sync + self-heal  (dev, then staging, then prod)
+6. enable prune                  (after diff mode looks clean)
+7. add alerts on controller health, not on every retry
+```
+
+Step 3 catches most problems before they touch production. Step 4
+prevents the replica fight. Step 7 keeps alerts useful.
+
+GitOps does not replace CI. CI builds, tests, and signs the artifact.
+GitOps decides what runs where. The boundary is simple: **CI produces
+the artifact. Git states the intent. The controller makes reality match
+intent.** If reality and intent differ, the loop reports it. The team
+then fixes Git, not the cluster.
+
+---
