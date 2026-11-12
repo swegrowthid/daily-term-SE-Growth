@@ -1684,3 +1684,239 @@ OFF switch. That is the whole point: merge small, ship dark, turn on
 slowly, remove the flag fast.
 
 ---
+
+day - 11
+
+## Eval-Driven Development (EDD)
+
+### Definition:
+
+**Eval-Driven Development (EDD)** is a way to build LLM applications. You
+first write down what "good" behavior looks like in numbers. Then you
+measure every change against those numbers. You keep a change only when
+its score goes up or stays equal.
+
+An eval is a test case for a model. It has an input, a rule that checks
+the output, and a pass or fail result. The rule can be a string check, a
+program assertion, or a second model that grades the answer. A set of
+evals forms a scoreboard for your agent.
+
+EDD behaves like Test Driven Development, but for probabilistic output.
+A unit test has one right answer. An eval grades an answer that varies
+between runs. So EDD compares scores of whole runs instead of asserting
+one exact string.
+
+WITHOUT EDD vs WITH EDD — how a change earns trust
+──────────────────────────────────────────────────────────────────────────────
+
+┌────────────────────────────────┐    ┌────────────────────────────────────┐
+│ WITHOUT: demo-driven           │    │ WITH: eval-driven                  │
+│                                │    │                                    │
+│ change the prompt              │    │ write the change                   │
+│ try 3 examples by hand         │    │ run the full eval set (200+ cases) │
+│ "looks good"                   │    │ score = pass rate + assertions     │
+│ merge to main                  │    │ compare with saved baseline        │
+│                                │    │                                    │
+│ weeks later: a regression      │    │ score drops 92% -> 88%             │
+│ nobody knows which change      │    │ block the merge, find the case     │
+│ debug guesswork, days          │    │ fix or revert, hours               │
+└────────────────────────────────┘    └────────────────────────────────────┘
+
+The core of EDD is one short loop. You run it after every change.
+
+THE EDD LOOP — every change passes through the same five steps
+──────────────────────────────────────────────────────────────────────────────
+
+  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌────────────┐
+  │   SPEC   │───▶│ DATASET  │───▶│   RUN    │───▶│  SCORE   │───▶│  COMPARE   │
+  │  "good"  │    │  inputs  │    │  agent   │    │  pass /  │    │  vs saved  │
+  │ defined  │    │ + rules  │    │  on all  │    │   fail   │    │  baseline  │
+  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────┬─────┘
+        ▲                                                                │
+        │ score >= baseline ?  yes -> merge        no: fix or revert     │
+        └────────────────────────────────────────────────────────────────┘
+
+Four pieces make the loop work:
+
+1. SPEC FIRST. Write a short spec of good behavior. Include what the
+   agent must not do and what must keep working. One page is enough.
+2. SMALL DATASET. Start with 30 to 100 cases. Mix real failures from
+   production logs with synthetic edge cases. Grow it when a bug
+   escapes, not before.
+3. NARROW CHECKS. Ask one narrow question per case and grade it pass or
+   fail. A 1-to-10 scale hides regressions. "Does the answer cite a
+   source? yes/no" finds them.
+4. SAVED BASELINE. Store the score of the current main branch. Compare
+   experiments against it. A change that fixes one case and breaks
+   three others shows up as a number, not as an opinion.
+
+Trade-offs, so the picture stays honest. Someone must write and curate
+the eval set, and that work never ends. An LLM judge has its own bias
+and cost, so teams often fine-tune a small judge model: Cisco showed
+eval models that run at up to 98% lower cost than a commercial LLM
+(Splunk Agent Observability, Nov 2026). A dataset rots as the product
+changes. And an eval set only measures what you wrote down. A green
+scoreboard does not prove safety — it proves that these specific rules
+held on these specific cases. EDD replaces "it looked fine" with
+measured evidence, not with certainty.
+
+### Example:
+
+Scenario: a team builds a customer support agent. The agent answers
+tickets and can call tools. The spec has one hard rule: the agent must
+ask the user to confirm before it calls `refund_order`.
+
+FLOW — one week of EDD on the same agent
+──────────────────────────────────────────────────────────────────────────────
+
+  when    action                                     score
+  ─────   ───────────────────────────────────────    ──────
+  mon     baseline run, 120 cases                    92%
+          save score as baseline
+  tue     change: retrieval tool + prompt rewrite    88%  <- regression
+          scorer shows case 47 now fails
+  wed     split the change, keep the tool only       90%
+  thu     add 6 new cases for the refund rule        91%
+  fri     fix: confirm step inside the tool loop     94%
+          score above baseline -> merge to main
+
+CASE 47 — the exact failure the scoreboard found
+──────────────────────────────────────────────────────────────────────────────
+
+  input    : "order 5512 arrived damaged, just refund me"
+  rule     : agent asks for confirmation, no refund call yet
+  ────────────────────────────────────────────────────────────────
+  before   : OK     "I can refund it. Confirm?"  (no tool call)
+  after    : FAIL   refund_order(order="5512")   (called directly)
+  ────────────────────────────────────────────────────────────────
+  cause    : the new prompt says "act fast, complete the task"
+  fix      : the confirm check moves into the tool executor,
+             so no prompt wording can skip it
+
+Compare with the world without EDD. On Tuesday the demo still looks
+fine: one hand-picked ticket shows a fast, correct refund. The team
+merges. The skipped confirmation reaches users on Friday. With EDD the
+scoreboard drops on Tuesday, case 47 names the failure, and the fix
+lands before users see the change.
+
+---
+
+day - 12
+
+## Context Engineering
+
+### Definition:
+
+**Context engineering** is the work of deciding what the model reads at each
+step of a run. It covers the system prompt, retrieved documents, tool results,
+memory, and conversation history. It also covers what you remove. Prompt
+engineering polishes one instruction. Context engineering manages the whole
+window across many steps.
+
+Three facts drive this discipline:
+
+1. **The window is finite.** Long runs fill it fast. One raw tool result can
+   hold 2,000 tokens. Ten of them crowd out the instruction.
+2. **Attention is not uniform.** The study "Lost in the Middle" (Liu et al.,
+   2023) shows a U-shape: models use facts at the start and the end of the
+   window better than facts in the middle.
+3. **Every token costs.** The provider bills the full window on every call. A
+   stale document costs the same as a fresh one.
+
+```text
+WITHOUT CONTEXT ENGINEERING              WITH CONTEXT ENGINEERING
+(one bucket that only grows)             (layers you control)
+
+┌──────────────────────────────┐         ┌───────────────────────────────┐
+│ system prompt                │         │ L1  instructions    stable    │
+│ 50 past messages             │         │ L2  working state   small     │
+│ full repository dump         │         │ L3  retrieved docs  on demand │
+│ 10 raw tool outputs          │         │ L4  tool results    summarized│
+│ 3 whole documents            │         │ L5  history         trimmed   │
+└──────────────────────────────┘         └───────────────────────────────┘
+                │                                        │
+                ▼                                        ▼
+  answer hides in the middle              assembler picks layers per step
+  model repeats old instructions        raw output leaves after extraction
+  you pay for dead weight                 you pay for what the step needs
+```
+
+The core move is selection, not volume. Extra context can hurt. An irrelevant
+document pulls the model off the answer. A superseded instruction fights the
+current one. So the engineer asks, at every step: what is the minimum set of
+tokens that lets the model do this step well?
+
+What usually gets cut:
+
+- raw logs and tool output, after you extract the facts from them
+- instructions that a later message replaced
+- duplicate retrievals of the same document
+- old turns that no longer affect the next action
+
+What must stay:
+
+- the goal of the run, in stable wording
+- the facts the model derived, in short form
+- constraints that still bind, like budget, format, or safety rules
+
+The failure modes look the same from the outside: the model ignores an
+instruction, or answers from a stale document. The cause is window management,
+not model quality. Debugging means reading the exact context the model saw,
+not the prompt you meant to send.
+
+### Example:
+
+Scenario: a support agent answers a refund question. The policy document has
+8,400 tokens. The agent has 40 past tickets in its history, about 11,000
+tokens.
+
+```text
+NAIVE — one growing dump
+──────────────────────────────────────────────────────────────────────────────
+
+  turn 1   input = policy.txt (8,400) + 40 old tickets (11,000) + question
+           ┌────────────────────────────────────────────────────────────┐
+           │ instruction │ old tickets │ policy: page 1..42 │ question  │
+           └────────────────────────────────────────────────────────────┘
+                                                 ▲
+                                    the 14-day rule sits here,
+                                   in the middle, next to noise
+
+           model quotes the 30-day rule from page 2. wrong answer.
+
+  turn 2   add: agent reply + 2 raw tool outputs (+3,000 tokens)
+           window = 22,400 tokens. most of it is dead weight.
+           billing grows. the answer gets harder to find.
+
+
+WITH CONTEXT ENGINEERING — assemble, use, evict
+──────────────────────────────────────────────────────────────────────────────
+
+  user question
+        │
+        ▼
+  retrieve section "refunds" (600 tok) ──► extract 3 rules (120 tok)
+        │                                              │
+        ▼                                              ▼
+  evict the raw document               answer from working state
+        │                                              │
+        └─────────── next turn ────────────────────────┘
+                               │
+                               ▼
+                 window at turn 2: ~900 tokens
+           instructions + facts + new question only
+
+  time      token count in window        what the model reads
+  ───────   ───────────────────────      ──────────────────────────────
+  turn 1    19,400 (naive)               mostly noise
+  turn 1       900  (managed)            the 3 refund rules, clearly
+  turn 2    22,400 (naive)               noise grows again
+  turn 2       900  (managed)            state stays small, answer stays fresh
+```
+
+The managed path does more work per step: one retrieval, one extraction, one
+eviction. It returns a smaller window and a better answer. That trade is the
+job. Measure it with two numbers: tokens per turn, and answer accuracy on
+questions that need a rule from the middle of the document.
+
+---
