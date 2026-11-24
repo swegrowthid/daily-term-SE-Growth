@@ -3267,3 +3267,127 @@ Flow for one task:
 The semaphore limits concurrency to 3 tasks. The system protects CPU and memory. Extra tasks wait instead of crashing the service.
 
 ---
+
+day - 23
+
+## Continuous Profiling
+
+### Definition:
+
+**Continuous Profiling** is a method that collects performance profiles from running systems all the time. A profiler samples the program at a low rate, such as 19 or 100 times per second. The profiler records where the CPU or memory time goes. The system stores these samples as time-series profiles. Engineers can compare profiles across time, versions, and deployments.
+
+Traditional profiling runs only during a local debug session or a short load test. That approach misses problems that appear only in production. Continuous profiling keeps a small, constant overhead in production. It gives a direct answer when latency or cost rises.
+
+```text
+WITHOUT CONTINUOUS PROFILING
+  Production latency rises at 14:10
+    metrics:    "CPU is high"           (what is wrong)
+    logs:       "request took 2.1 s"     (which request is slow)
+    traces:     "db span is long"        (where time is spent)
+    engineer:   "Which function burns CPU right now?"
+                -> attach profiler by hand
+                -> reproduce the load
+                -> maybe miss the exact moment
+                -> root cause found hours later
+
+WITH CONTINUOUS PROFILING
+  Production latency rises at 14:10
+    metrics:    "CPU is high"           (what is wrong)
+    traces:     "db span is long"        (where time is spent)
+    profiles:   "json.Marshal in
+                 /api/orders uses 41% CPU"  (which code burns CPU)
+    engineer:   compare 14:00 vs 14:10
+                -> see the hot function
+                -> link to deploy #4821
+                -> root cause found in minutes
+```
+
+A profile answers a different question than the other three signals:
+
+```text
++-------------------+---------------------------------------------+
+| Signal            | Main question                               |
++-------------------+---------------------------------------------+
+| Metrics           | Is the system healthy? How much?            |
+| Logs              | What event happened?                        |
+| Traces            | Which service or span took time?            |
+| Continuous Profile| Which line or function used CPU/memory?     |
++-------------------+---------------------------------------------+
+```
+
+Common profile types:
+
+```text
+Profile type      Measures                    Typical use
+--------------    -------------------------   -------------------------
+CPU               CPU time on stack           hot functions, slow loops
+Heap / alloc      memory allocation bytes     GC pressure, wasteful code
+Wall clock        elapsed time on stack       I/O waits, lock waits
+Mutex / lock      time spent waiting          contention in concurrency
+Goroutine/thread  stack count over time       leaks, runaway concurrency
+```
+
+Continuous profiling has a cost. The agent adds CPU overhead, often 1% to 3% with sampling profilers. The system also stores profile data. Teams control this cost with low sample rates, retention limits, and aggregation.
+
+### Example:
+
+A team runs an order API in production. After deploy #4821, p95 latency rises from 120 ms to 900 ms. Metrics show high CPU. Traces show time inside the order service, but they do not show the exact function.
+
+The team uses continuous profiling and compares the flame graph before and after the deploy:
+
+```text
+BEFORE DEPLOY #4821 (14:00)              AFTER DEPLOY #4821 (14:10)
++----------------------------------+     +----------------------------------+
+| http.HandleOrder          100%   |     | http.HandleOrder          100%   |
+| +------------------------------+ |     | +------------------------------+ |
+| | validateOrder          18%   | |     | | validateOrder          10%   | |
+| +------------------------------+ |     | +------------------------------+ |
+| | buildResponse          22%   | |     | | buildResponse          52%   | |
+| | +--------------------------+ | |     | | +--------------------------+ | |
+| | | json.Marshal       12%   | | |     | | | json.Marshal       41%   | | |
+| | +--------------------------+ | |     | | |  (pretty-print enabled)  | | |
+| +------------------------------+ |     | | +--------------------------+ | |
+| | db.Query               35%   | |     | +------------------------------+ |
+| +------------------------------+ |     | | db.Query               20%   | |
+| +------------------------------+ |     | +------------------------------+ |
++----------------------------------+     +----------------------------------+
+         normal CPU shape                         new hot spot
+```
+
+The investigation flow:
+
+```text
+deploy #4821 goes live
+        |
+        v
+metrics alert: p95 latency 120 ms -> 900 ms
+CPU usage: 35% -> 78%
+        |
+        v
+engineer opens continuous profiling UI
+        |
+        +--> select service: order-api
+        +--> compare window: 14:00 vs 14:10
+        +--> profile type: CPU
+        |
+        v
+flame graph diff shows:
+  json.Marshal CPU share: 12% -> 41%
+        |
+        v
+engineer inspects commit in deploy #4821
+  finds: json.MarshalIndent(..., "  ", "  ")
+  debug pretty-print left in production code
+        |
+        v
+fix: change MarshalIndent back to Marshal
+deploy #4822
+        |
+        v
+profiles return to normal
+p95 latency returns to ~120 ms
+```
+
+The profile gave the missing detail. Metrics showed the symptom. Traces showed the slow service. Continuous profiling showed the exact function that burned CPU. The team fixed the code without adding temporary debug instrumentation.
+
+---
