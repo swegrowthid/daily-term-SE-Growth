@@ -3391,3 +3391,156 @@ p95 latency returns to ~120 ms
 The profile gave the missing detail. Metrics showed the symptom. Traces showed the slow service. Continuous profiling showed the exact function that burned CPU. The team fixed the code without adding temporary debug instrumentation.
 
 ---
+
+day - 24
+
+## Merge Queue
+
+### Definition:
+
+**A merge queue is a line in front of the main branch.** A pull request joins the
+line after review. The queue builds the tree that main will have after the merge.
+It runs the checks on that tree. It merges the pull request only when the checks
+pass. A pull request that fails leaves the line. Main stays green.
+
+The naive path tests a branch, then merges it. Main moves between the test and
+the merge. The test result becomes old. Two pull requests can pass alone and
+break main together. The classic example: PR-1 renames a function. PR-2 adds a
+call to the old name. Each PR passes its own tests against the same base. Both
+merge. Main turns red. No test was wrong. No reviewer missed a line. The two
+changes were never tested together.
+
+```text
+WITHOUT A QUEUE - test the branch, then merging       WITH A QUEUE - test the tree that will land
+=================================================     =================================================
+  PR-1   test vs base A ........ PASS   merge           PR-1   tree A+B ...... checks PASS   merge
+  PR-2   test vs base A ........ PASS   merge           PR-2   tree A+B+C .... checks PASS   merge
+         (PR-2 never saw A+B)                                  (tested with the PRs ahead of it)
+
+  main = A+B+C  -->  RED                                main = A+B+C  -->  GREEN
+  PR-1 renamed foo -> bar. PR-2 calls foo().            the queue checks the combined tree first,
+  each PR passed alone. together they break main.       and merges only when those checks pass.
+  no test was wrong. no reviewer missed a line.         a failing PR leaves the line. main stays green.
+  the two changes were never tested together.
+```
+
+The queue fixes one problem: it tests the combined tree, not the branch alone.
+It does not make the check faster. It makes the check test the code that main
+will run.
+
+```text
+ANATOMY OF ONE PULL REQUEST THROUGH THE QUEUE
+=============================================
+   review
+    done   join      build     run the      merge
+           line      combined  full check   if green
+  +------+          +--------+             +--------+
+  | PR   |--------->+--------+------------>+--------+
+  |      |  FIFO    | tree   |             | squash |
+  +------+          +--------+             +--------+
+                        |                     ^
+                        v                     |
+                 +-----------+                |
+                 |  checks:  |  PASS ---------+
+                 | lint      |
+                 | typecheck |  FAIL
+                 | tests     |--------> leaves the line.
+                 | docs      |          main stays green.
+                 | build     |
+                 | secrets   |
+                 +-----------+
+```
+
+Three setups share this idea. They differ in cost and in speed.
+
+```text
+THREE WAYS TO GET READY PRs ONTO MAIN
+=====================================
+way                       checks per PR   when one fails
+---------------------------------------------------------------
+one by one                1               fix it, run again
+queue, one check each     1 (parallel)    it leaves, rest rerun
+queue with batches        less than 1     split the batch
+
+hosted options
+  GitHub merge queue    merge groups on a temp branch
+  GitLab merge train    own pipeline per MR, 20 in parallel
+  batch tools           Mergify, Aviator, Trunk, bors-ng
+```
+
+The trade-offs are real. A batch tests the final tree only. It does not test
+main after the first merge alone. GitLab merge trains test each of those states.
+A single machine cannot afford that. A flaky test that fails under load blocks
+every batch, so fix it first. A queue also adds wait for one lonely pull
+request: a train with one PR is a merge with extra steps. Hosted queues
+depend on your plan. GitHub lists its queue for public repos of an organization
+and for private repos on Enterprise Cloud. GitLab merge trains need Premium or
+Ultimate.
+
+### Example:
+
+A team runs one monorepo where coding agents open pull requests. From 4
+November to 19 November 2026 the agents merged more than 900 pull requests,
+about 57 a day. Six of those days ran at 80 or more. The main check had a
+median of 20.3 minutes, and a job waited a median of 28.5 minutes before it
+even started. Eighty merges times twenty minutes is more than twenty-six
+hours of checking in one day, on one line. The line could never catch up.
+
+The team built a merge train: one shell script, run as a supervised service
+on one machine. It takes up to six ready pull requests, oldest first.
+
+```text
+MERGE TRAIN - one script, one line, up to 6 PRs per run
+
+  ready pull requests, oldest first, max 6
+                    |
+  +------------------------------------+
+  | 1. read description and base       |  unfinished template?
+  |    branch                          |  drop it in seconds
+  +------------------------------------+
+                    v
+  +------------------------------------+
+  | 2. build ONE tree from             |  merge each PR in order onto
+  |    latest main                     |  latest main. conflict? drop
+  |                                    |  that PR, report it, keep rest
+  +------------------------------------+
+                    v
+  +------------------------------------+
+  | 3. run full check ONCE on          |  ~20 steps: install, lint,
+  |    the combined tree               |  typecheck, tests, docs,
+  |                                    |  build, secret scan
+  +-----------------+------------------+
+         +----------+----------+
+         |                     |
+         v                     v
+         GREEN                 RED
+         merge each PR         split the batch
+         in order,             in half. run
+         squash-merge          each half the
+         the exact tree        same way, down
+         that passed.          to one PR. the
+         main never            single failing
+         turns red.            PR goes back
+                               with its log.
+                               the other PRs
+                               still merge.
+```
+
+The numbers were modest, and the author says so. On the first night, 34 train
+runs merged 37 pull requests. One run took 10.4 minutes on average. The best
+batch pushed four pull requests through one 18-minute check. Throughput went
+from about 2.1 to about 2.8 pull requests an hour, but that comparison came
+from one quieter night. Over about 40 hours, 60 of 99 trains carried one
+pull request.
+
+The train gave the team reliability. Before it, small scripts waited for a
+ready pull request, then merged it. Some of those scripts died and nobody
+noticed. Ready pull requests sat unmerged for hours. A train is a supervised
+service. It writes a log and a summary, and it restarts. A dead agent no
+longer takes the merge with it.
+
+The queue did not make the check faster. It made merging boring, and that
+turned out to be what the team needed.
+
+---
+
