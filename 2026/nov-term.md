@@ -3544,3 +3544,102 @@ turned out to be what the team needed.
 
 ---
 
+day - 25
+
+## AI Gateway
+
+### Definition:
+An AI Gateway is a middleware layer between your apps and the LLM providers. Apps send every model request to one endpoint. The gateway picks a provider, adds the right key, and forwards the request. It also records tokens, latency, and cost.
+
+```text
+WITHOUT AI GATEWAY (EACH APP TALKS TO EACH PROVIDER)
+
+  chat-app -------+--> provider A key  (stored in chat-app env)
+  agent-worker ---+--> provider B key  (stored in agent-worker env)
+  batch-job ------+--> provider A key  (copied into a config file)
+
+  Result:
+    - keys live in N repos, rotation takes N pull requests
+    - each app writes its own timeout, retry, and fallback code
+    - cost is split across N dashboards, no team budget
+    - one provider outage hits every app alone
+
+
+WITH AI GATEWAY (ONE ENTRY POINT)
+
+  chat-app -------+                        +--> provider A
+  agent-worker ---+--> AI Gateway ---------+--> provider B
+  batch-job ------+        |               +--> self-hosted model
+                           |
+                           +--> holds all provider keys (1 place)
+                           +--> routes by model, price, health
+                           +--> timeout, retry, fallback
+                           +--> budget and rate limit per team
+                           +--> logs tokens, latency, cost
+
+  Apps hold one gateway token. The token is scoped and revocable.
+```
+
+Core jobs of the gateway:
+
+- **Authentication.** The gateway keeps the provider keys. Apps send only a gateway token. You revoke one token instead of hunting keys in N repos.
+- **Routing.** The gateway maps one logical model name to a provider. It can route by price, latency, or provider health.
+- **Reliability.** The gateway applies timeouts, retries, and fallback to a second provider. App code stays the same.
+- **Budget.** The gateway counts tokens and dollars per team. It blocks requests when the budget runs out.
+- **Observability.** The gateway writes one log line for every call: model, tokens, latency, cost. One dashboard replaces N dashboards.
+
+Trade-offs to plan for:
+
+- The gateway adds one network hop. This cost is small next to model latency, but measure it in your system.
+- The gateway can fail. Run at least two replicas behind a load balancer, and keep health checks.
+- The gateway caches when it can. A cache hit skips the provider call and saves money.
+- The gateway does not decide product behavior. The app still picks the model for each task.
+
+Common tools: LiteLLM, Portkey, Cloudflare AI Gateway, Vercel AI Gateway, Kong. Most of them expose an OpenAI-compatible endpoint. You change the base URL and keep the rest of the code.
+
+### Example:
+A support team runs three services on models: a ticket classifier, a reply writer, and a summarizer. The team sets a budget of $20 per day.
+
+```text
+SUPPORT AGENT REQUEST FLOW
+
+  [new support ticket]
+                |
+                v
+  reply-writer sends one request
+  POST gateway/v1/chat/completions
+  header: Bearer <gateway token>
+                |
+                v
+  +-------- AI GATEWAY --------+
+  | 1. check team budget       |
+  |    spent $8 of $20 today   |
+  | 2. pick model: reply-model |
+  | 3. attach provider key     |
+  | 4. set timeout 20s         |
+  +----------------------------+
+                |
+        provider healthy?
+        /               \
+       yes              no
+        |               |
+        v               v
+    provider A      fallback B
+        |               |
+        +-------+-------+
+                |
+                v
+  response reaches reply-writer
+                |
+                v
+  gateway logs the usage:
+  model, 1,240 tokens, $0.0031, 840 ms
+                |
+                v
+  team spend counter: $9.40 / $20
+```
+
+The next morning, provider A returns rate-limit errors for 30 minutes. The gateway moves traffic to provider B. App code does not change, and tickets keep getting replies. The budget counter stops the team at $20 for the day. When a key leaks, the team revokes one gateway token and the leak ends.
+
+---
+
