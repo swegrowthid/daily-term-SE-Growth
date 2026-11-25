@@ -3267,3 +3267,379 @@ Flow for one task:
 The semaphore limits concurrency to 3 tasks. The system protects CPU and memory. Extra tasks wait instead of crashing the service.
 
 ---
+
+day - 23
+
+## Continuous Profiling
+
+### Definition:
+
+**Continuous Profiling** is a method that collects performance profiles from running systems all the time. A profiler samples the program at a low rate, such as 19 or 100 times per second. The profiler records where the CPU or memory time goes. The system stores these samples as time-series profiles. Engineers can compare profiles across time, versions, and deployments.
+
+Traditional profiling runs only during a local debug session or a short load test. That approach misses problems that appear only in production. Continuous profiling keeps a small, constant overhead in production. It gives a direct answer when latency or cost rises.
+
+```text
+WITHOUT CONTINUOUS PROFILING
+  Production latency rises at 14:10
+    metrics:    "CPU is high"           (what is wrong)
+    logs:       "request took 2.1 s"     (which request is slow)
+    traces:     "db span is long"        (where time is spent)
+    engineer:   "Which function burns CPU right now?"
+                -> attach profiler by hand
+                -> reproduce the load
+                -> maybe miss the exact moment
+                -> root cause found hours later
+
+WITH CONTINUOUS PROFILING
+  Production latency rises at 14:10
+    metrics:    "CPU is high"           (what is wrong)
+    traces:     "db span is long"        (where time is spent)
+    profiles:   "json.Marshal in
+                 /api/orders uses 41% CPU"  (which code burns CPU)
+    engineer:   compare 14:00 vs 14:10
+                -> see the hot function
+                -> link to deploy #4821
+                -> root cause found in minutes
+```
+
+A profile answers a different question than the other three signals:
+
+```text
++-------------------+---------------------------------------------+
+| Signal            | Main question                               |
++-------------------+---------------------------------------------+
+| Metrics           | Is the system healthy? How much?            |
+| Logs              | What event happened?                        |
+| Traces            | Which service or span took time?            |
+| Continuous Profile| Which line or function used CPU/memory?     |
++-------------------+---------------------------------------------+
+```
+
+Common profile types:
+
+```text
+Profile type      Measures                    Typical use
+--------------    -------------------------   -------------------------
+CPU               CPU time on stack           hot functions, slow loops
+Heap / alloc      memory allocation bytes     GC pressure, wasteful code
+Wall clock        elapsed time on stack       I/O waits, lock waits
+Mutex / lock      time spent waiting          contention in concurrency
+Goroutine/thread  stack count over time       leaks, runaway concurrency
+```
+
+Continuous profiling has a cost. The agent adds CPU overhead, often 1% to 3% with sampling profilers. The system also stores profile data. Teams control this cost with low sample rates, retention limits, and aggregation.
+
+### Example:
+
+A team runs an order API in production. After deploy #4821, p95 latency rises from 120 ms to 900 ms. Metrics show high CPU. Traces show time inside the order service, but they do not show the exact function.
+
+The team uses continuous profiling and compares the flame graph before and after the deploy:
+
+```text
+BEFORE DEPLOY #4821 (14:00)              AFTER DEPLOY #4821 (14:10)
++----------------------------------+     +----------------------------------+
+| http.HandleOrder          100%   |     | http.HandleOrder          100%   |
+| +------------------------------+ |     | +------------------------------+ |
+| | validateOrder          18%   | |     | | validateOrder          10%   | |
+| +------------------------------+ |     | +------------------------------+ |
+| | buildResponse          22%   | |     | | buildResponse          52%   | |
+| | +--------------------------+ | |     | | +--------------------------+ | |
+| | | json.Marshal       12%   | | |     | | | json.Marshal       41%   | | |
+| | +--------------------------+ | |     | | |  (pretty-print enabled)  | | |
+| +------------------------------+ |     | | +--------------------------+ | |
+| | db.Query               35%   | |     | +------------------------------+ |
+| +------------------------------+ |     | | db.Query               20%   | |
+| +------------------------------+ |     | +------------------------------+ |
++----------------------------------+     +----------------------------------+
+         normal CPU shape                         new hot spot
+```
+
+The investigation flow:
+
+```text
+deploy #4821 goes live
+        |
+        v
+metrics alert: p95 latency 120 ms -> 900 ms
+CPU usage: 35% -> 78%
+        |
+        v
+engineer opens continuous profiling UI
+        |
+        +--> select service: order-api
+        +--> compare window: 14:00 vs 14:10
+        +--> profile type: CPU
+        |
+        v
+flame graph diff shows:
+  json.Marshal CPU share: 12% -> 41%
+        |
+        v
+engineer inspects commit in deploy #4821
+  finds: json.MarshalIndent(..., "  ", "  ")
+  debug pretty-print left in production code
+        |
+        v
+fix: change MarshalIndent back to Marshal
+deploy #4822
+        |
+        v
+profiles return to normal
+p95 latency returns to ~120 ms
+```
+
+The profile gave the missing detail. Metrics showed the symptom. Traces showed the slow service. Continuous profiling showed the exact function that burned CPU. The team fixed the code without adding temporary debug instrumentation.
+
+---
+
+day - 24
+
+## Merge Queue
+
+### Definition:
+
+**A merge queue is a line in front of the main branch.** A pull request joins the
+line after review. The queue builds the tree that main will have after the merge.
+It runs the checks on that tree. It merges the pull request only when the checks
+pass. A pull request that fails leaves the line. Main stays green.
+
+The naive path tests a branch, then merges it. Main moves between the test and
+the merge. The test result becomes old. Two pull requests can pass alone and
+break main together. The classic example: PR-1 renames a function. PR-2 adds a
+call to the old name. Each PR passes its own tests against the same base. Both
+merge. Main turns red. No test was wrong. No reviewer missed a line. The two
+changes were never tested together.
+
+```text
+WITHOUT A QUEUE - test the branch, then merging       WITH A QUEUE - test the tree that will land
+=================================================     =================================================
+  PR-1   test vs base A ........ PASS   merge           PR-1   tree A+B ...... checks PASS   merge
+  PR-2   test vs base A ........ PASS   merge           PR-2   tree A+B+C .... checks PASS   merge
+         (PR-2 never saw A+B)                                  (tested with the PRs ahead of it)
+
+  main = A+B+C  -->  RED                                main = A+B+C  -->  GREEN
+  PR-1 renamed foo -> bar. PR-2 calls foo().            the queue checks the combined tree first,
+  each PR passed alone. together they break main.       and merges only when those checks pass.
+  no test was wrong. no reviewer missed a line.         a failing PR leaves the line. main stays green.
+  the two changes were never tested together.
+```
+
+The queue fixes one problem: it tests the combined tree, not the branch alone.
+It does not make the check faster. It makes the check test the code that main
+will run.
+
+```text
+ANATOMY OF ONE PULL REQUEST THROUGH THE QUEUE
+=============================================
+   review
+    done   join      build     run the      merge
+           line      combined  full check   if green
+  +------+          +--------+             +--------+
+  | PR   |--------->+--------+------------>+--------+
+  |      |  FIFO    | tree   |             | squash |
+  +------+          +--------+             +--------+
+                        |                     ^
+                        v                     |
+                 +-----------+                |
+                 |  checks:  |  PASS ---------+
+                 | lint      |
+                 | typecheck |  FAIL
+                 | tests     |--------> leaves the line.
+                 | docs      |          main stays green.
+                 | build     |
+                 | secrets   |
+                 +-----------+
+```
+
+Three setups share this idea. They differ in cost and in speed.
+
+```text
+THREE WAYS TO GET READY PRs ONTO MAIN
+=====================================
+way                       checks per PR   when one fails
+---------------------------------------------------------------
+one by one                1               fix it, run again
+queue, one check each     1 (parallel)    it leaves, rest rerun
+queue with batches        less than 1     split the batch
+
+hosted options
+  GitHub merge queue    merge groups on a temp branch
+  GitLab merge train    own pipeline per MR, 20 in parallel
+  batch tools           Mergify, Aviator, Trunk, bors-ng
+```
+
+The trade-offs are real. A batch tests the final tree only. It does not test
+main after the first merge alone. GitLab merge trains test each of those states.
+A single machine cannot afford that. A flaky test that fails under load blocks
+every batch, so fix it first. A queue also adds wait for one lonely pull
+request: a train with one PR is a merge with extra steps. Hosted queues
+depend on your plan. GitHub lists its queue for public repos of an organization
+and for private repos on Enterprise Cloud. GitLab merge trains need Premium or
+Ultimate.
+
+### Example:
+
+A team runs one monorepo where coding agents open pull requests. From 4
+November to 19 November 2026 the agents merged more than 900 pull requests,
+about 57 a day. Six of those days ran at 80 or more. The main check had a
+median of 20.3 minutes, and a job waited a median of 28.5 minutes before it
+even started. Eighty merges times twenty minutes is more than twenty-six
+hours of checking in one day, on one line. The line could never catch up.
+
+The team built a merge train: one shell script, run as a supervised service
+on one machine. It takes up to six ready pull requests, oldest first.
+
+```text
+MERGE TRAIN - one script, one line, up to 6 PRs per run
+
+  ready pull requests, oldest first, max 6
+                    |
+  +------------------------------------+
+  | 1. read description and base       |  unfinished template?
+  |    branch                          |  drop it in seconds
+  +------------------------------------+
+                    v
+  +------------------------------------+
+  | 2. build ONE tree from             |  merge each PR in order onto
+  |    latest main                     |  latest main. conflict? drop
+  |                                    |  that PR, report it, keep rest
+  +------------------------------------+
+                    v
+  +------------------------------------+
+  | 3. run full check ONCE on          |  ~20 steps: install, lint,
+  |    the combined tree               |  typecheck, tests, docs,
+  |                                    |  build, secret scan
+  +-----------------+------------------+
+         +----------+----------+
+         |                     |
+         v                     v
+         GREEN                 RED
+         merge each PR         split the batch
+         in order,             in half. run
+         squash-merge          each half the
+         the exact tree        same way, down
+         that passed.          to one PR. the
+         main never            single failing
+         turns red.            PR goes back
+                               with its log.
+                               the other PRs
+                               still merge.
+```
+
+The numbers were modest, and the author says so. On the first night, 34 train
+runs merged 37 pull requests. One run took 10.4 minutes on average. The best
+batch pushed four pull requests through one 18-minute check. Throughput went
+from about 2.1 to about 2.8 pull requests an hour, but that comparison came
+from one quieter night. Over about 40 hours, 60 of 99 trains carried one
+pull request.
+
+The train gave the team reliability. Before it, small scripts waited for a
+ready pull request, then merged it. Some of those scripts died and nobody
+noticed. Ready pull requests sat unmerged for hours. A train is a supervised
+service. It writes a log and a summary, and it restarts. A dead agent no
+longer takes the merge with it.
+
+The queue did not make the check faster. It made merging boring, and that
+turned out to be what the team needed.
+
+---
+
+day - 25
+
+## AI Gateway
+
+### Definition:
+An AI Gateway is a middleware layer between your apps and the LLM providers. Apps send every model request to one endpoint. The gateway picks a provider, adds the right key, and forwards the request. It also records tokens, latency, and cost.
+
+```text
+WITHOUT AI GATEWAY (EACH APP TALKS TO EACH PROVIDER)
+
+  chat-app -------+--> provider A key  (stored in chat-app env)
+  agent-worker ---+--> provider B key  (stored in agent-worker env)
+  batch-job ------+--> provider A key  (copied into a config file)
+
+  Result:
+    - keys live in N repos, rotation takes N pull requests
+    - each app writes its own timeout, retry, and fallback code
+    - cost is split across N dashboards, no team budget
+    - one provider outage hits every app alone
+
+
+WITH AI GATEWAY (ONE ENTRY POINT)
+
+  chat-app -------+                        +--> provider A
+  agent-worker ---+--> AI Gateway ---------+--> provider B
+  batch-job ------+        |               +--> self-hosted model
+                           |
+                           +--> holds all provider keys (1 place)
+                           +--> routes by model, price, health
+                           +--> timeout, retry, fallback
+                           +--> budget and rate limit per team
+                           +--> logs tokens, latency, cost
+
+  Apps hold one gateway token. The token is scoped and revocable.
+```
+
+Core jobs of the gateway:
+
+- **Authentication.** The gateway keeps the provider keys. Apps send only a gateway token. You revoke one token instead of hunting keys in N repos.
+- **Routing.** The gateway maps one logical model name to a provider. It can route by price, latency, or provider health.
+- **Reliability.** The gateway applies timeouts, retries, and fallback to a second provider. App code stays the same.
+- **Budget.** The gateway counts tokens and dollars per team. It blocks requests when the budget runs out.
+- **Observability.** The gateway writes one log line for every call: model, tokens, latency, cost. One dashboard replaces N dashboards.
+
+Trade-offs to plan for:
+
+- The gateway adds one network hop. This cost is small next to model latency, but measure it in your system.
+- The gateway can fail. Run at least two replicas behind a load balancer, and keep health checks.
+- The gateway caches when it can. A cache hit skips the provider call and saves money.
+- The gateway does not decide product behavior. The app still picks the model for each task.
+
+Common tools: LiteLLM, Portkey, Cloudflare AI Gateway, Vercel AI Gateway, Kong. Most of them expose an OpenAI-compatible endpoint. You change the base URL and keep the rest of the code.
+
+### Example:
+A support team runs three services on models: a ticket classifier, a reply writer, and a summarizer. The team sets a budget of $20 per day.
+
+```text
+SUPPORT AGENT REQUEST FLOW
+
+  [new support ticket]
+                |
+                v
+  reply-writer sends one request
+  POST gateway/v1/chat/completions
+  header: Bearer <gateway token>
+                |
+                v
+  +-------- AI GATEWAY --------+
+  | 1. check team budget       |
+  |    spent $8 of $20 today   |
+  | 2. pick model: reply-model |
+  | 3. attach provider key     |
+  | 4. set timeout 20s         |
+  +----------------------------+
+                |
+        provider healthy?
+        /               \
+       yes              no
+        |               |
+        v               v
+    provider A      fallback B
+        |               |
+        +-------+-------+
+                |
+                v
+  response reaches reply-writer
+                |
+                v
+  gateway logs the usage:
+  model, 1,240 tokens, $0.0031, 840 ms
+                |
+                v
+  team spend counter: $9.40 / $20
+```
+
+The next morning, provider A returns rate-limit errors for 30 minutes. The gateway moves traffic to provider B. App code does not change, and tickets keep getting replies. The budget counter stops the team at $20 for the day. When a key leaks, the team revokes one gateway token and the leak ends.
+
+---
+
