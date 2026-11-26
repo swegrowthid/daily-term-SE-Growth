@@ -3643,3 +3643,247 @@ The next morning, provider A returns rate-limit errors for 30 minutes. The gatew
 
 ---
 
+day - 26
+
+## Anti-Corruption Layer (ACL)
+
+### Definition:
+
+An **anti-corruption layer (ACL)** is a translation boundary between two
+systems with different domain models. Eric Evans named the pattern in
+*Domain-Driven Design* (2003). Microsoft Azure and AWS both list it in
+their pattern catalogs.
+
+The layer does one job. It stops the model of system A from leaking into
+system B. Every message crosses the layer. The layer converts names,
+types, status codes, and units on both sides. Each system keeps speaking
+its own language.
+
+The name is literal. Without the layer, the foreign model corrupts your
+code. Your `Order.status` starts to hold `"P"` and `"C"`, because billing
+uses those letters. Your types grow `int | string` unions for a field that
+should have one type. The foreign model now lives in your code, your
+tests, and your head.
+
+```text
+WITHOUT ACL — the foreign model leaks in                    WITH ACL — one translation boundary
+════════════════════════════════════════════════════        ════════════════════════════════════════════════════
+
+ order-service                billing-service                order-service                billing-service
+┌─────────────────────┐      ┌─────────────────────┐        ┌─────────────────────┐      ┌─────────────────────┐
+│ status: "P","C"     │      │ st: "P","C","X"     │        │ status: Paid ...    │      │ st: "P","C","X"     │
+│ type:  1701,1702    │◄─────│ type: 1701,1702     │        │ type:  OrderType    │◄─────│ type: 1701,1702     │
+│ id:    "000451"     │ JSON │ id:   451 (int)     │        │ id:    OrderId      │ ACL  │ id:   451 (int)     │
+└─────────────────────┘      └─────────────────────┘        └─────────────────────┘      └─────────────────────┘
+
+ the caller learns the foreign shape                         the caller sees only its own model
+ in its own domain: letters, ints,                           one map absorbs the next change,
+ raw JSON, handler by handler                                so N handlers never learn it
+```
+
+**What the layer translates.** All of it is model, not business logic.
+
+```text
+WHAT CROSSES THE BOUNDARY
+══════════════════════════════════════════════════════════════════════════════
+
+  KIND             WITHOUT ACL               WITH ACL
+  ────────────────────────────────────────────────────────────────────────────
+  field names      legacy keys in your       your names inside your code,
+                   domain objects            legacy names at the edge only
+  value shapes     451 vs "000451",          one conversion point,
+                   cents vs rupiah           one unit, one type
+  status codes     "P","C","X" in switch     enum in your code,
+                   statements everywhere     string only in the map
+  error shape      legacy error codes        your error type,
+                   parsed in five places     raised in one place
+  protocol         legacy retry and          retry, timeout, circuit
+                   timeout rules in app      breaker owned by the layer
+  validation       trust whatever            validate the contract,
+                   the legacy returns        reject bad data at entry
+```
+
+**The layer has three parts.** Keep them separate, or the layer turns
+into a second business service.
+
+```text
+INSIDE THE LAYER
+═════════════════════════════════════════════════════════════════════════════════════════
+
+  your service           anti-corruption layer                       legacy service
+  ┌──────────────────┐   ┌───────────────────────────────────────┐   ┌──────────────────┐
+  │                  │   │ 1. FACADE                             │   │                  │
+  │   calls one      │──►│     the only interface you expose     │   │   legacy API,    │
+  │   interface      │   │     it speaks YOUR language           │   │   legacy model,  │
+  │                  │◄──│ 2. TRANSLATOR                         │◄──│   legacy protocol│
+  └──────────────────┘   │     your type  <->  legacy DTO        │   └──────────────────┘
+                         │ 3. CONTRACT                           │
+                         │     the legacy promise, written down  │
+                         │     plus: validate, timeout, retry,   │
+                         │     circuit breaker, correlation id   │
+                         └───────────────────────────────────────┘
+```
+
+**When an ACL earns its cost, and when it does not.**
+
+```text
+ USE IT                               SKIP IT
+ ───────────────────────────────────  ───────────────────────────────────
+
+ legacy or third-party system you     the two sides already share one
+ do not control, and will not         vocabulary and one data shape
+ change its model for you             (then a plain DTO mapping is enough)
+ gradual migration: some callers      a throwaway integration with a
+ must stay on the old model           short life and one caller
+ your new service is a core           the layer would hold business
+ subdomain worth protecting           rules or orchestration
+ two teams, two release cadences,     a hot path where the extra hop
+ no way to coordinate a change        measures as real latency
+```
+
+**The bill and the limits.** An ACL is a new component in the request
+path. Plan for it.
+
+```text
+COST AND LIMIT LEDGER — ANTI-CORRUPTION LAYER
+┌──────────────────────────────────┬─────────────────────────────────────────┐
+│ PRO                              │ CON                                     │
+├──────────────────────────────────┼─────────────────────────────────────────┤
+│ your domain model stays clean:   │ one more hop: each conversion costs     │
+│ no foreign codes in your types   │ latency, so measure it on the hot path  │
+│ one change in the legacy model   │ one more service or module to run:      │
+│ becomes one edit in one map      │ deploy, monitor, scale, alert           │
+│ teams stop coordinating releases │ it can fail: a broken mapping makes     │
+│ the caller needs no change       │ the legacy system unreachable, so       │
+│ you can test your side alone:    │ add timeout, retry, circuit breaker     │
+│ fake the legacy behind the       │ it is debt during migration: if it      │
+│ facade, run contract tests       │ is permanent, record it as a decision   │
+│ a clean cut point for strangler  │ a wrong layer hides the real model:     │
+│ style replacement later          │ translation only, never business rule   │
+└──────────────────────────────────┴─────────────────────────────────────────┘
+```
+
+Two mistakes show up often:
+
+- **Business logic inside the layer.** Discount rules or order state
+  machines move in, because they "fit the translation". Now two places
+  own the rule, and they disagree. The layer translates. Nothing else.
+- **No contract test.** The legacy team renames a field on Friday. Your
+  layer compiles, the deploy passes, and the first customer sees a null.
+  A contract test runs the real legacy responses against your translator
+  on every build, and the rename fails in CI instead of in production.
+
+The relation to neighbours is short. An **adapter** wraps one object. An
+**ACL** guards a whole boundary between two models. A **gateway** decides
+where a request goes. An **ACL** decides what a request means. Teams that
+strangle a monolith usually run both: the strangler routes traffic, the
+ACL keeps the new services fluent in their own language while the old
+system still speaks its own.
+
+### Example:
+
+A payment team runs a legacy monolith called `billing`. It stores order
+state as the letters `P`, `C`, `X` and order type as the integers `1701`
+and `1702`. The team extracts a new `order-service` in Go. The new code
+uses `OrderStatus` and `OrderType` enums. The old system stays in
+production for two more years.
+
+**First attempt, no ACL.** Every handler in `order-service` parses the
+legacy shape:
+
+```text
+FIRST ATTEMPT — the legacy shape spreads
+══════════════════════════════════════════════════════════════════════════
+
+  GET /billing/orders/451
+        │
+        ▼
+  order-service
+        ├── handler A:  if r.St == "P" { ... }        reads legacy letters
+        ├── handler B:  orderType := r.Type == 1701   reads legacy ints
+        ├── handler C:  parse "000451" to int         parses legacy ids
+        └── handler D:  switch r.St { case "X": ... } reads legacy letters
+
+  one month later, billing adds a new state: "R" (refunded)
+        │
+        ▼
+  four handlers break in four different ways
+  handler A treats "R" as unknown  -> refund looks like payment pending
+  handler D falls to default       -> refund looks like cancellation
+  no compiler error, no failing test, one customer email
+```
+
+**Second attempt, with an ACL.** The team puts one package,
+`internal/billingapi`, between `order-service` and the monolith:
+
+```text
+REQUEST PATH — one boundary, one place to change
+═════════════════════════════════════════════════════════════════════════════════════════════
+
+  order-service                   internal/billingapi (ACL)              billing monolith
+  ┌──────────────────┐            ┌───────────────────────────────┐      ┌──────────────────┐
+  │ GetOrder(id)     │            │ facade   GetOrder(id)         │      │ GET /orders/451  │
+  │ OrderStatus enum │───────────►│ decode   st -> OrderStatus    │─────►│ st: "P"          │
+  │ OrderType enum   │  domain    │ validate id, status, type     │ JSON │ type: 1701       │
+  │ OrderId value    │◄───────────│ map      1701 -> TypeStandard │◄─────│ id: 451          │
+  └──────────────────┘            │ guard    timeout 2s, retry 2, │      └──────────────────┘
+                                  │           circuit breaker     │
+                                  └───────────────────────────────┘
+                                                  ▼
+                                            one contract test file:
+                                            testdata/*.json of real legacy
+                                            responses, run on every build
+```
+
+Now the legacy team adds `"R"`. The change lands in one function:
+
+```text
+THE CHANGE — one edit instead of four
+════════════════════════════════════════════════════════════════════════════
+
+  BEFORE                                AFTER
+  ────────────────────────────────────  ────────────────────────────────────
+  mapStatus(s string) Status            mapStatus(s string) Status
+    case "P": return Paid                 case "P": return Paid
+    case "C": return Cancelled            case "C": return Cancelled
+    case "X": return Closed               case "X": return Closed
+                                          case "R": return Refunded   // new
+    default:  return Unknown               default:  return Unknown
+
+  four handlers switch on the raw      the contract test fails first:
+  string, three of them miss "R"       a real response now carries "R"
+                                        mapStatus has no case for it
+                                        CI blocks the build
+```
+
+The rollout order that worked:
+
+```text
+1. write the contract tests from captured legacy responses   no production change
+2. add internal/billingapi, move one handler to it          old path still works
+3. move the remaining handlers, delete the raw parsing      grep finds zero hits
+4. keep the layer for the whole migration                   it is planned debt
+5. retire it only when no caller needs the legacy model     record the decision
+```
+
+Step 5 comes last for a reason. Two models run at the same time during a
+migration. Deleting the layer early forces every caller back to the
+legacy shape, which is the corruption the layer was built to stop.
+
+**The honest part.** The ACL did not make the legacy model good. It
+still stores state as single letters, and the translator still hides that
+fact from the new code. A reader of `order-service` must open one package
+to see the truth. The layer also adds a hop, so the team measures p95 on
+that path and keeps the timeout at 2 seconds. And the layer is only as
+strong as its contract tests: a legacy change with no captured response
+in `testdata` will still pass CI. The team replays real production
+responses against the translator every month to close that gap.
+
+The punchline: an anti-corruption layer buys one thing — your model stays
+yours. Foreign names, codes, and shapes stop at the boundary, and one
+map absorbs the next change the other team makes. You pay one extra hop,
+one component to run, and the discipline to keep business rules out of
+it. Put the layer where two models meet, and keep it only as long as
+both models must coexist.
+
+---
