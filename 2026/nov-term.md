@@ -3643,3 +3643,361 @@ The next morning, provider A returns rate-limit errors for 30 minutes. The gatew
 
 ---
 
+day - 26
+
+## Anti-Corruption Layer (ACL)
+
+### Definition:
+
+An **anti-corruption layer (ACL)** is a translation boundary between two
+systems with different domain models. Eric Evans named the pattern in
+*Domain-Driven Design* (2003). Microsoft Azure and AWS both list it in
+their pattern catalogs.
+
+The layer does one job. It stops the model of system A from leaking into
+system B. Every message crosses the layer. The layer converts names,
+types, status codes, and units on both sides. Each system keeps speaking
+its own language.
+
+The name is literal. Without the layer, the foreign model corrupts your
+code. Your `Order.status` starts to hold `"P"` and `"C"`, because billing
+uses those letters. Your types grow `int | string` unions for a field that
+should have one type. The foreign model now lives in your code, your
+tests, and your head.
+
+```text
+WITHOUT ACL — the foreign model leaks in                    WITH ACL — one translation boundary
+════════════════════════════════════════════════════        ════════════════════════════════════════════════════
+
+ order-service                billing-service                order-service                billing-service
+┌─────────────────────┐      ┌─────────────────────┐        ┌─────────────────────┐      ┌─────────────────────┐
+│ status: "P","C"     │      │ st: "P","C","X"     │        │ status: Paid ...    │      │ st: "P","C","X"     │
+│ type:  1701,1702    │◄─────│ type: 1701,1702     │        │ type:  OrderType    │◄─────│ type: 1701,1702     │
+│ id:    "000451"     │ JSON │ id:   451 (int)     │        │ id:    OrderId      │ ACL  │ id:   451 (int)     │
+└─────────────────────┘      └─────────────────────┘        └─────────────────────┘      └─────────────────────┘
+
+ the caller learns the foreign shape                         the caller sees only its own model
+ in its own domain: letters, ints,                           one map absorbs the next change,
+ raw JSON, handler by handler                                so N handlers never learn it
+```
+
+**What the layer translates.** All of it is model, not business logic.
+
+```text
+WHAT CROSSES THE BOUNDARY
+══════════════════════════════════════════════════════════════════════════════
+
+  KIND             WITHOUT ACL               WITH ACL
+  ────────────────────────────────────────────────────────────────────────────
+  field names      legacy keys in your       your names inside your code,
+                   domain objects            legacy names at the edge only
+  value shapes     451 vs "000451",          one conversion point,
+                   cents vs rupiah           one unit, one type
+  status codes     "P","C","X" in switch     enum in your code,
+                   statements everywhere     string only in the map
+  error shape      legacy error codes        your error type,
+                   parsed in five places     raised in one place
+  protocol         legacy retry and          retry, timeout, circuit
+                   timeout rules in app      breaker owned by the layer
+  validation       trust whatever            validate the contract,
+                   the legacy returns        reject bad data at entry
+```
+
+**The layer has three parts.** Keep them separate, or the layer turns
+into a second business service.
+
+```text
+INSIDE THE LAYER
+═════════════════════════════════════════════════════════════════════════════════════════
+
+  your service           anti-corruption layer                       legacy service
+  ┌──────────────────┐   ┌───────────────────────────────────────┐   ┌──────────────────┐
+  │                  │   │ 1. FACADE                             │   │                  │
+  │   calls one      │──►│     the only interface you expose     │   │   legacy API,    │
+  │   interface      │   │     it speaks YOUR language           │   │   legacy model,  │
+  │                  │◄──│ 2. TRANSLATOR                         │◄──│   legacy protocol│
+  └──────────────────┘   │     your type  <->  legacy DTO        │   └──────────────────┘
+                         │ 3. CONTRACT                           │
+                         │     the legacy promise, written down  │
+                         │     plus: validate, timeout, retry,   │
+                         │     circuit breaker, correlation id   │
+                         └───────────────────────────────────────┘
+```
+
+**When an ACL earns its cost, and when it does not.**
+
+```text
+ USE IT                               SKIP IT
+ ───────────────────────────────────  ───────────────────────────────────
+
+ legacy or third-party system you     the two sides already share one
+ do not control, and will not         vocabulary and one data shape
+ change its model for you             (then a plain DTO mapping is enough)
+ gradual migration: some callers      a throwaway integration with a
+ must stay on the old model           short life and one caller
+ your new service is a core           the layer would hold business
+ subdomain worth protecting           rules or orchestration
+ two teams, two release cadences,     a hot path where the extra hop
+ no way to coordinate a change        measures as real latency
+```
+
+**The bill and the limits.** An ACL is a new component in the request
+path. Plan for it.
+
+```text
+COST AND LIMIT LEDGER — ANTI-CORRUPTION LAYER
+┌──────────────────────────────────┬─────────────────────────────────────────┐
+│ PRO                              │ CON                                     │
+├──────────────────────────────────┼─────────────────────────────────────────┤
+│ your domain model stays clean:   │ one more hop: each conversion costs     │
+│ no foreign codes in your types   │ latency, so measure it on the hot path  │
+│ one change in the legacy model   │ one more service or module to run:      │
+│ becomes one edit in one map      │ deploy, monitor, scale, alert           │
+│ teams stop coordinating releases │ it can fail: a broken mapping makes     │
+│ the caller needs no change       │ the legacy system unreachable, so       │
+│ you can test your side alone:    │ add timeout, retry, circuit breaker     │
+│ fake the legacy behind the       │ it is debt during migration: if it      │
+│ facade, run contract tests       │ is permanent, record it as a decision   │
+│ a clean cut point for strangler  │ a wrong layer hides the real model:     │
+│ style replacement later          │ translation only, never business rule   │
+└──────────────────────────────────┴─────────────────────────────────────────┘
+```
+
+Two mistakes show up often:
+
+- **Business logic inside the layer.** Discount rules or order state
+  machines move in, because they "fit the translation". Now two places
+  own the rule, and they disagree. The layer translates. Nothing else.
+- **No contract test.** The legacy team renames a field on Friday. Your
+  layer compiles, the deploy passes, and the first customer sees a null.
+  A contract test runs the real legacy responses against your translator
+  on every build, and the rename fails in CI instead of in production.
+
+The relation to neighbours is short. An **adapter** wraps one object. An
+**ACL** guards a whole boundary between two models. A **gateway** decides
+where a request goes. An **ACL** decides what a request means. Teams that
+strangle a monolith usually run both: the strangler routes traffic, the
+ACL keeps the new services fluent in their own language while the old
+system still speaks its own.
+
+### Example:
+
+A payment team runs a legacy monolith called `billing`. It stores order
+state as the letters `P`, `C`, `X` and order type as the integers `1701`
+and `1702`. The team extracts a new `order-service` in Go. The new code
+uses `OrderStatus` and `OrderType` enums. The old system stays in
+production for two more years.
+
+**First attempt, no ACL.** Every handler in `order-service` parses the
+legacy shape:
+
+```text
+FIRST ATTEMPT — the legacy shape spreads
+══════════════════════════════════════════════════════════════════════════
+
+  GET /billing/orders/451
+        │
+        ▼
+  order-service
+        ├── handler A:  if r.St == "P" { ... }        reads legacy letters
+        ├── handler B:  orderType := r.Type == 1701   reads legacy ints
+        ├── handler C:  parse "000451" to int         parses legacy ids
+        └── handler D:  switch r.St { case "X": ... } reads legacy letters
+
+  one month later, billing adds a new state: "R" (refunded)
+        │
+        ▼
+  four handlers break in four different ways
+  handler A treats "R" as unknown  -> refund looks like payment pending
+  handler D falls to default       -> refund looks like cancellation
+  no compiler error, no failing test, one customer email
+```
+
+**Second attempt, with an ACL.** The team puts one package,
+`internal/billingapi`, between `order-service` and the monolith:
+
+```text
+REQUEST PATH — one boundary, one place to change
+═════════════════════════════════════════════════════════════════════════════════════════════
+
+  order-service                   internal/billingapi (ACL)              billing monolith
+  ┌──────────────────┐            ┌───────────────────────────────┐      ┌──────────────────┐
+  │ GetOrder(id)     │            │ facade   GetOrder(id)         │      │ GET /orders/451  │
+  │ OrderStatus enum │───────────►│ decode   st -> OrderStatus    │─────►│ st: "P"          │
+  │ OrderType enum   │  domain    │ validate id, status, type     │ JSON │ type: 1701       │
+  │ OrderId value    │◄───────────│ map      1701 -> TypeStandard │◄─────│ id: 451          │
+  └──────────────────┘            │ guard    timeout 2s, retry 2, │      └──────────────────┘
+                                  │           circuit breaker     │
+                                  └───────────────────────────────┘
+                                                  ▼
+                                            one contract test file:
+                                            testdata/*.json of real legacy
+                                            responses, run on every build
+```
+
+Now the legacy team adds `"R"`. The change lands in one function:
+
+```text
+THE CHANGE — one edit instead of four
+════════════════════════════════════════════════════════════════════════════
+
+  BEFORE                                AFTER
+  ────────────────────────────────────  ────────────────────────────────────
+  mapStatus(s string) Status            mapStatus(s string) Status
+    case "P": return Paid                 case "P": return Paid
+    case "C": return Cancelled            case "C": return Cancelled
+    case "X": return Closed               case "X": return Closed
+                                          case "R": return Refunded   // new
+    default:  return Unknown               default:  return Unknown
+
+  four handlers switch on the raw      the contract test fails first:
+  string, three of them miss "R"       a real response now carries "R"
+                                        mapStatus has no case for it
+                                        CI blocks the build
+```
+
+The rollout order that worked:
+
+```text
+1. write the contract tests from captured legacy responses   no production change
+2. add internal/billingapi, move one handler to it          old path still works
+3. move the remaining handlers, delete the raw parsing      grep finds zero hits
+4. keep the layer for the whole migration                   it is planned debt
+5. retire it only when no caller needs the legacy model     record the decision
+```
+
+Step 5 comes last for a reason. Two models run at the same time during a
+migration. Deleting the layer early forces every caller back to the
+legacy shape, which is the corruption the layer was built to stop.
+
+**The honest part.** The ACL did not make the legacy model good. It
+still stores state as single letters, and the translator still hides that
+fact from the new code. A reader of `order-service` must open one package
+to see the truth. The layer also adds a hop, so the team measures p95 on
+that path and keeps the timeout at 2 seconds. And the layer is only as
+strong as its contract tests: a legacy change with no captured response
+in `testdata` will still pass CI. The team replays real production
+responses against the translator every month to close that gap.
+
+The punchline: an anti-corruption layer buys one thing — your model stays
+yours. Foreign names, codes, and shapes stop at the boundary, and one
+map absorbs the next change the other team makes. You pay one extra hop,
+one component to run, and the discipline to keep business rules out of
+it. Put the layer where two models meet, and keep it only as long as
+both models must coexist.
+
+---
+
+day - 27
+
+## Reconciliation Loop
+
+### Definition:
+A reconciliation loop is a control loop that runs forever. Every pass reads the desired state, reads the actual state, compares them, and acts when they differ. The desired state is the single source of truth.
+
+Kubernetes controllers, GitOps tools (Argo CD, Flux), and Terraform-style provisioners all use this pattern. The name means: make the real world match the declared plan.
+
+WITHOUT RECONCILIATION (ONE-SHOT ACTION)
+
+  operator runs a deploy command
+               |
+               v
+  +---------------------------+
+  | create pods               |
+  | set image = v1.5          |
+  | report: success           |
+  +---------------------------+
+               |
+               v
+  command ends. the system trusts its own report.
+
+  Later a node dies. Or someone deletes a pod.
+  Nothing runs again. The gap stays open forever.
+
+
+WITH RECONCILIATION (LOOP THAT NEVER ENDS)
+
+  desired state: Git repo (image v1.5, replicas 3)
+               |
+               v
+  +---------------------------------------------+
+  | LOOP (every N seconds, forever)             |
+  |                                             |
+  |  1. read desired state                      |
+  |  2. read actual state                       |
+  |  3. diff = desired vs actual                |
+  |  4. diff empty   -> wait, repeat            |
+  |  5. diff not empty -> act to close it       |
+  |  6. wait, repeat                            |
+  +---------------------------------------------+
+               |
+               v
+  real world converges to the desired state.
+  a missed event, a crashed controller, or a
+  manual edit is just another diff on the next pass.
+
+The key property: the loop is level-triggered, not edge-triggered.
+An edge-triggered system reacts to events ("something happened, run this").
+A level-triggered system compares current state with desired state on every pass.
+A lost event costs nothing. The next pass finds the same difference.
+
+```text
+                      EDGE-TRIGGERED            LEVEL-TRIGGERED
+  what drives work    an event                  a difference
+  missed event        work never runs           next pass sees the same gap
+  after a crash       replay the event log      recompute from the source of truth
+  duplicate action    possible and risky        safe when actions are idempotent
+  recovery plan       you write one             the loop is the recovery plan
+```
+
+What you need to build one:
+
+- **One source of truth.** The desired state lives in Git, in etcd, or in one config store. Two sources fight each other.
+- **Idempotent actions.** "Set replicas to 3" is safe to run many times. "Add one replica" is not. Reconciliation runs many times by design.
+- **Read before act.** The loop compares first. It does not push a change it has not measured.
+
+Trade-offs to plan for:
+
+- **Each pass costs work.** Every pass reads, renders, and diffs. At thousands of resources this is real CPU and real load on Git. Polling is the safety net. Webhooks give speed without the cost.
+- **Two owners fight forever.** If an autoscaler sets replicas and the Git manifest also declares replicas, both loops correct each other on every pass. Fix: one field, one owner. Either do not declare the field, or exclude it from the diff.
+- **Failure is quiet.** A stuck loop looks healthy from outside. No crash, no restart, green dashboards. Alert on repeated sync failures, not on process death.
+- **Self-heal is a policy choice.** Correction guarantees convergence, and it will revert an emergency change without asking. Detection only keeps humans in the loop. Start with detection. Move to correction when you know what legitimately drifts.
+
+### Example:
+A team runs Argo CD with auto-sync and self-heal on. A night incident starts: an engineer scales a deployment by hand, then a node fails and a pod dies.
+
+```text
+TIMELINE OF ONE INCIDENT
+
+  22:00   Git (desired)        live cluster (actual)       status
+          replicas: 3          replicas: 3                 Synced
+          image: v1.5          image: v1.5
+
+  22:14   engineer runs:       replicas: 6  (hand edit)    OutOfSync
+          kubectl scale --replicas=6
+
+  22:16   Argo CD pass (tick): diff found
+          +---------------------------------------------+
+          | desired replicas: 3                         |
+          | actual   replicas: 6                        |
+          | action: apply desired state                 |
+          +---------------------------------------------+
+                                |
+                                v
+          live cluster:        replicas: 3                 Synced
+
+  23:02   node dies, pod gone  replicas: 2                 OutOfSync
+                                (no event was delivered
+                                 to anyone, and none is needed)
+
+  23:03   Argo CD pass (tick): diff found, pod recreated
+          live cluster:        replicas: 3                 Synced
+```
+
+Nothing in that timeline needed a message queue, a webhook, or a human. The gap was enough. Every problem became "current does not match desired", and one rule fixed all of them.
+
+The same loop works one level up. Kubernetes reconciles the cluster toward the objects in etcd. Argo CD reconciles the objects in Git. Each layer only knows its own desired state and its own actual state.
+
+Watch for this failure: the loop runs, reports success, but converges to the wrong target. A manifest with a bad image tag reconciles perfectly into a broken Deployment. The pattern fixes drift, not bad intent. Review the desired state like code, because it is code.
+
+---
