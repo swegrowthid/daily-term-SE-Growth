@@ -3887,3 +3887,117 @@ it. Put the layer where two models meet, and keep it only as long as
 both models must coexist.
 
 ---
+
+day - 27
+
+## Reconciliation Loop
+
+### Definition:
+A reconciliation loop is a control loop that runs forever. Every pass reads the desired state, reads the actual state, compares them, and acts when they differ. The desired state is the single source of truth.
+
+Kubernetes controllers, GitOps tools (Argo CD, Flux), and Terraform-style provisioners all use this pattern. The name means: make the real world match the declared plan.
+
+WITHOUT RECONCILIATION (ONE-SHOT ACTION)
+
+  operator runs a deploy command
+               |
+               v
+  +---------------------------+
+  | create pods               |
+  | set image = v1.5          |
+  | report: success           |
+  +---------------------------+
+               |
+               v
+  command ends. the system trusts its own report.
+
+  Later a node dies. Or someone deletes a pod.
+  Nothing runs again. The gap stays open forever.
+
+
+WITH RECONCILIATION (LOOP THAT NEVER ENDS)
+
+  desired state: Git repo (image v1.5, replicas 3)
+               |
+               v
+  +---------------------------------------------+
+  | LOOP (every N seconds, forever)             |
+  |                                             |
+  |  1. read desired state                      |
+  |  2. read actual state                       |
+  |  3. diff = desired vs actual                |
+  |  4. diff empty   -> wait, repeat            |
+  |  5. diff not empty -> act to close it       |
+  |  6. wait, repeat                            |
+  +---------------------------------------------+
+               |
+               v
+  real world converges to the desired state.
+  a missed event, a crashed controller, or a
+  manual edit is just another diff on the next pass.
+
+The key property: the loop is level-triggered, not edge-triggered.
+An edge-triggered system reacts to events ("something happened, run this").
+A level-triggered system compares current state with desired state on every pass.
+A lost event costs nothing. The next pass finds the same difference.
+
+```text
+                      EDGE-TRIGGERED            LEVEL-TRIGGERED
+  what drives work    an event                  a difference
+  missed event        work never runs           next pass sees the same gap
+  after a crash       replay the event log      recompute from the source of truth
+  duplicate action    possible and risky        safe when actions are idempotent
+  recovery plan       you write one             the loop is the recovery plan
+```
+
+What you need to build one:
+
+- **One source of truth.** The desired state lives in Git, in etcd, or in one config store. Two sources fight each other.
+- **Idempotent actions.** "Set replicas to 3" is safe to run many times. "Add one replica" is not. Reconciliation runs many times by design.
+- **Read before act.** The loop compares first. It does not push a change it has not measured.
+
+Trade-offs to plan for:
+
+- **Each pass costs work.** Every pass reads, renders, and diffs. At thousands of resources this is real CPU and real load on Git. Polling is the safety net. Webhooks give speed without the cost.
+- **Two owners fight forever.** If an autoscaler sets replicas and the Git manifest also declares replicas, both loops correct each other on every pass. Fix: one field, one owner. Either do not declare the field, or exclude it from the diff.
+- **Failure is quiet.** A stuck loop looks healthy from outside. No crash, no restart, green dashboards. Alert on repeated sync failures, not on process death.
+- **Self-heal is a policy choice.** Correction guarantees convergence, and it will revert an emergency change without asking. Detection only keeps humans in the loop. Start with detection. Move to correction when you know what legitimately drifts.
+
+### Example:
+A team runs Argo CD with auto-sync and self-heal on. A night incident starts: an engineer scales a deployment by hand, then a node fails and a pod dies.
+
+```text
+TIMELINE OF ONE INCIDENT
+
+  22:00   Git (desired)        live cluster (actual)       status
+          replicas: 3          replicas: 3                 Synced
+          image: v1.5          image: v1.5
+
+  22:14   engineer runs:       replicas: 6  (hand edit)    OutOfSync
+          kubectl scale --replicas=6
+
+  22:16   Argo CD pass (tick): diff found
+          +---------------------------------------------+
+          | desired replicas: 3                         |
+          | actual   replicas: 6                        |
+          | action: apply desired state                 |
+          +---------------------------------------------+
+                                |
+                                v
+          live cluster:        replicas: 3                 Synced
+
+  23:02   node dies, pod gone  replicas: 2                 OutOfSync
+                                (no event was delivered
+                                 to anyone, and none is needed)
+
+  23:03   Argo CD pass (tick): diff found, pod recreated
+          live cluster:        replicas: 3                 Synced
+```
+
+Nothing in that timeline needed a message queue, a webhook, or a human. The gap was enough. Every problem became "current does not match desired", and one rule fixed all of them.
+
+The same loop works one level up. Kubernetes reconciles the cluster toward the objects in etcd. Argo CD reconciles the objects in Git. Each layer only knows its own desired state and its own actual state.
+
+Watch for this failure: the loop runs, reports success, but converges to the wrong target. A manifest with a bad image tag reconciles perfectly into a broken Deployment. The pattern fixes drift, not bad intent. Review the desired state like code, because it is code.
+
+---
